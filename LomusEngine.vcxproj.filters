@@ -45,6 +45,15 @@
     <ClCompile Include="Lomus\Renderer\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Lomus\Renderer\Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lomus\Core\GameObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lomus\Renderer\Skybox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Lomus\Shader\shaders\default.vert">
@@ -81,12 +90,57 @@
     <ClInclude Include="Lomus\Renderer\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lomus\Renderer\Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libs\Include\json\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lomus\Core\GameObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lomus\Utils\ToolBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lomus\Renderer\Skybox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\Downloads\brick.png">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="..\..\..\Downloads\planksSpec.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Maps\planksSpec.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Textures\brick.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Textures\planks.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Textures\texture.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\back.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\bottom.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\front.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\left.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\right.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\top.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

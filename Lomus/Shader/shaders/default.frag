@@ -23,6 +23,10 @@ uniform vec4 lightColor;
 uniform vec3 lightPos;
 // Gets the position of the camera from the main function
 uniform vec3 camPos;
+uniform bool isTransparent;
+
+
+uniform vec2 fog;
 
 
 vec4 pointLight()
@@ -50,7 +54,11 @@ vec4 pointLight()
 	vec3 reflectionDirection = reflect(-lightDirection, normal);
 	float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
 	float specular = specAmount * specularLight;
-
+	if (isTransparent){
+		if (texture(diffuse0, texCoord).a < 0.1) {
+			discard;
+		}
+	}
 	return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
 }
 
@@ -70,7 +78,11 @@ vec4 direcLight()
 	vec3 reflectionDirection = reflect(-lightDirection, normal);
 	float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
 	float specular = specAmount * specularLight;
-
+	if (isTransparent){
+		if (texture(diffuse0, texCoord).a < 0.1) {
+			discard;
+		}
+	}
 	return (texture(diffuse0, texCoord) * (diffuse + ambient) + texture(specular0, texCoord).r * specular) * lightColor;
 }
 
@@ -98,13 +110,35 @@ vec4 spotLight()
 	// calculates the intensity of the crntPos based on its angle to the center of the light cone
 	float angle = dot(vec3(0.0f, -1.0f, 0.0f), -lightDirection);
 	float inten = clamp((angle - outerCone) / (innerCone - outerCone), 0.0f, 1.0f);
-
+	if (isTransparent){
+		if (texture(diffuse0, texCoord).a < 0.1) {
+			discard;
+		}
+	}
 	return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
 }
 
+float linearizeDepth(float depth)
+{
+	float near = fog.x;
+	float far = fog.y;
+	return (2.0 * near * far) / (far + near - (depth * 2.0 - 1.0) * (far - near));
+}
+
+float logisticDepth(float depth, float steepness = 0.5f, float offset = 5.0f)
+{
+	float zVal = linearizeDepth(depth);
+	return (1 / (1 + exp(-steepness * (zVal - offset))));
+}
 
 void main()
 {
 	// outputs final color
-	FragColor = spotLight();
+	float depth = logisticDepth(gl_FragCoord.z);
+	if (fog.x > 0) {
+		FragColor = direcLight() * (1.0f - depth) + vec4(depth * vec3(0.85f, 0.85f, 0.90f), 1.0f);
+	} else {
+		FragColor = direcLight();
+	}
+	
 }

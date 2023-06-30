@@ -139,8 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Lomus\Core\GameObject.cpp" />
     <ClCompile Include="Lomus\Renderer\Camera.cpp" />
     <ClCompile Include="Lomus\Renderer\Mesh.cpp" />
+    <ClCompile Include="Lomus\Renderer\Model.cpp" />
+    <ClCompile Include="Lomus\Renderer\Skybox.cpp" />
     <ClCompile Include="stb.cpp" />
     <ClCompile Include="Lomus\Renderer\EBO.cpp" />
     <ClCompile Include="Lomus\Shader\ShaderClass.cpp" />
@@ -156,18 +159,33 @@
     <None Include="Lomus\Shader\shaders\light.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Libs\Include\json\json.hpp" />
+    <ClInclude Include="Lomus\Core\GameObject.h" />
     <ClInclude Include="Lomus\Renderer\Camera.h" />
     <ClInclude Include="Libs\Include\stb\std_image.h" />
     <ClInclude Include="Lomus\Renderer\EBO.h" />
     <ClInclude Include="Lomus\Renderer\Mesh.h" />
+    <ClInclude Include="Lomus\Renderer\Model.h" />
     <ClInclude Include="Lomus\Shader\ShaderClass.h" />
     <ClInclude Include="Lomus\Renderer\VBO.h" />
     <ClInclude Include="Lomus\Renderer\VAO.h" />
     <ClInclude Include="Lomus\Renderer\Texture.h" />
+    <ClInclude Include="Lomus\Utils\ToolBox.h" />
+    <ClInclude Include="Lomus\Renderer\Skybox.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\Downloads\brick.png" />
     <Image Include="..\..\..\Downloads\planksSpec.png" />
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\back.png" />
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\bottom.png" />
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\front.png" />
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\left.png" />
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\right.png" />
+    <Image Include="Lomus\Shader\shaders\Resources\Skyboxes\default\top.png" />
+    <Image Include="Resources\Maps\planksSpec.png" />
+    <Image Include="Resources\Textures\brick.png" />
+    <Image Include="Resources\Textures\planks.png" />
+    <Image Include="Resources\Textures\texture.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
