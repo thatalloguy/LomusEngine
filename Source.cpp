@@ -12,18 +12,35 @@
 #include "Lomus/Renderer/Camera.h"
 #include "Lomus/Renderer/Mesh.h"
 #include "Lomus/Renderer/Model.h"
+#include "Lomus/Renderer/Skybox.h"
 #include "Lomus/Utils/ToolBox.h"
+
+#include "Lomus/Lights/shadowMap.h"
 //Other
 #include "Libs/Include/stb/std_image.h"
 
 const unsigned int width = 800;
 const unsigned int height = 800;
 
+void GLAPIENTRY
+MessageCallback(GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam)
+{
+	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+		type, severity, message);
+}
+
+
 
 int main() {
 	glfwInit();
 	
-
 	//Window
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -43,17 +60,24 @@ int main() {
 	
 	
 
+	//SKYBOOXXX
+
+	Skybox skybox;
+
+	skybox.Init();
+
+
 	Shader shaderProgram("Lomus/Shader/shaders/default.vert", "Lomus/Shader/shaders/default.frag");
 	
 	
 	
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPos = glm::vec3(0.5f, 20.0f, 0.5f);
+	glm::vec3 lightPos = glm::vec3(100.5f, 100.5f, 100.5f);
 	glm::mat4 lightModel = glm::mat4(1.0f);
 	lightModel = glm::translate(lightModel, lightPos);
 
 	shaderProgram.Activate();
-	glUniform2f(glGetUniformLocation(shaderProgram.ID, "fog"), 0.1f, 100.0f);
+	//glUniform2f(glGetUniformLocation(shaderProgram.ID, "fog"), 0.1f, 100.0f);
 	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
 	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 
@@ -67,7 +91,21 @@ int main() {
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CCW);
 
+	glEnable(GL_DEBUG_OUTPUT);
+	//glDebugMessageCallback(MessageCallback, 0);
+
 	Model model("Resources/Model/Map/scene.gltf");
+
+	////////////shadowMap my_shadowMap = shadowMap();
+
+	////////////my_shadowMap.setLight(lightPos);
+
+	//ShadowMappss
+
+
+	shadowMap shadows = shadowMap();
+
+	shadows.setLight(lightPos);
 
 
 	//fps counter
@@ -78,7 +116,14 @@ int main() {
 
 
 	while (!glfwWindowShouldClose(window)) {
-		
+		GLenum err;
+		if ((err = glGetError()) != GL_NO_ERROR)
+		{
+			std::cout << "Error: " << err << " \n";
+			return -1;
+		}
+
+
 		crntTime = glfwGetTime();
 		timeDiff = crntTime - prevTime;
 		counter++;
@@ -91,30 +136,43 @@ int main() {
 
 			
 		}
+		glEnable(GL_DEPTH_TEST);
 
-		//Renderstuff
-		//glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		shadows.prepareRender();
+
+		// Draw scene for shadow map
+		model.Draw(shadows.shadowMapShader, camera);
+
+		shadows.unprepareRender(width, height);
+
+		shaderProgram.Activate();
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "lightProjection"), 1, GL_FALSE, glm::value_ptr(shadows.lightProjection));
+
+		// Bind the Shadow Map
+		glActiveTexture(GL_TEXTURE0 + 2);
+		glBindTexture(GL_TEXTURE_2D, shadows.my_shadowMap);
+		glUniform1i(glGetUniformLocation(shaderProgram.ID, "shadowMap"), 2);
+
 		glClearColor(0.85f, 0.85f, 0.90f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//Error checking
-		if (glGetError() != 0) {
-			std::cout << glGetError() << std::endl;
-		}
-		
-		
-		camera.Inputs(window); 
+		camera.Inputs(window);
+
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 
+		
 		model.Draw(shaderProgram, camera);
-
+		skybox.Render(camera, width, height);
+		
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		
 
 	}
-	
+	///////////my_shadowMap.Delete();
+	shadows.Delete();
+	skybox.Delete();
 	shaderProgram.Delete();
 	glfwDestroyWindow(window);
 	glfwTerminate();
