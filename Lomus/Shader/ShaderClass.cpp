@@ -13,6 +13,7 @@ std::string get_file_contents(const char* filename) {
 		in.close();
 		return(contents);
 	}
+	std::cout << "Couldn't load: " << filename << "\n";
 	throw(errno);
 }
 

@@ -12,11 +12,14 @@ in vec3 color;
 // Imports the texture coordinates from the Vertex Shader
 in vec2 texCoord;
 
+in vec4 fragPosLight;
 
 
 // Gets the Texture Units from the main function
 uniform sampler2D diffuse0;
 uniform sampler2D specular0;
+
+uniform sampler2D shadowMap;
 // Gets the color of the light from the main function
 uniform vec4 lightColor;
 // Gets the position of the light from the main function
@@ -65,7 +68,7 @@ vec4 pointLight()
 vec4 direcLight()
 {
 	// ambient lighting
-	float ambient = 0.20f;
+	float ambient = 0.60f;
 
 	// diffuse lighting
 	vec3 normal = normalize(Normal);
@@ -78,12 +81,27 @@ vec4 direcLight()
 	vec3 reflectionDirection = reflect(-lightDirection, normal);
 	float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
 	float specular = specAmount * specularLight;
-	if (isTransparent){
-		if (texture(diffuse0, texCoord).a < 0.1) {
-			discard;
+	//if (isTransparent){
+	//	if (texture(diffuse0, texCoord).a < 0.1) {
+	//		discard;
+	//	}
+	//}
+
+
+	float shadow = 0.0f;
+	vec3 lightCoords = fragPosLight.xyz / fragPosLight.w;
+	if (lightCoords.z <= 1.0f) {
+		lightCoords = (lightCoords + 1.0f) / 2.0f;
+
+		float closestDepth = texture(shadowMap, lightCoords.xy).r;
+		float currentDepth = lightCoords.z;
+
+		if (currentDepth > closestDepth) {
+			shadow = 1.0f;
 		}
+
 	}
-	return (texture(diffuse0, texCoord) * (diffuse + ambient) + texture(specular0, texCoord).r * specular) * lightColor;
+	return (texture(diffuse0, texCoord) * (diffuse * (1.0f - shadow) + ambient) + texture(specular0, texCoord).r * specular * (1.0f - shadow)) * lightColor;
 }
 
 vec4 spotLight()
@@ -93,7 +111,7 @@ vec4 spotLight()
 	float innerCone = 0.95f;
 
 	// ambient lighting
-	float ambient = 0.20f;
+	float ambient = 0.60f;
 
 	// diffuse lighting
 	vec3 normal = normalize(Normal);
@@ -115,6 +133,7 @@ vec4 spotLight()
 			discard;
 		}
 	}
+
 	return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
 }
 
@@ -135,7 +154,7 @@ void main()
 {
 	// outputs final color
 	float depth = logisticDepth(gl_FragCoord.z);
-	if (fog.x > 0) {
+	if (fog.x != 0) {
 		FragColor = direcLight() * (1.0f - depth) + vec4(depth * vec3(0.85f, 0.85f, 0.90f), 1.0f);
 	} else {
 		FragColor = direcLight();
