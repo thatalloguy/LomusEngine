@@ -39,28 +39,29 @@ shadowMap::shadowMap(unsigned int width, unsigned int height)
 
 void shadowMap::setLight(glm::vec3 lightPos)
 {
-	orthgonalProjection = glm::perspective(glm::radians(90.0f), (float)(shadowMapWidth / shadowMapHeight), 0.1f, 1000.0f);//orthgonalProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
-	lightView = glm::lookAt(20.0f * lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	float near_plane = 1.0f, far_plane = 7.5f;
+	orthgonalProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+	lightView = glm::lookAt(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	lightProjection = orthgonalProjection * lightView;
-
-	shadowMapShader.Activate();
-	glUniformMatrix4fv(glGetUniformLocation(shadowMapShader.ID, "lightProjection"), 1, GL_FALSE, glm::value_ptr(lightProjection));
-	//initShader();
+	initShader();
 }
 
 void shadowMap::prepareRender()
 {
+	//glCullFace(GL_BACK);
+	
 	glViewport(0, 0, shadowMapWidth, shadowMapHeight);
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	//Now render the scenes
+	shadowMapShader.Activate();
+	glUniformMatrix4fv(glGetUniformLocation(shadowMapShader.ID, "lightProjection"), 1, GL_FALSE, glm::value_ptr(lightProjection));
 }
 
 void shadowMap::unprepareRender(float screenWidth, float screenHeight)
 {
 	//After scene done rendering
-
+	//glCullFace(GL_FRONT);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

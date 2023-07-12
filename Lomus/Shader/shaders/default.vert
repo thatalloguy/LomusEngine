@@ -42,7 +42,6 @@ void main()
 	texCoord = mat2(0.0, -1.0, 1.0, 0.0) * aTex;
 	
 	fragPosLight = lightProjection * vec4(crntPos, 1.0);
-
 	// Outputs the positions/coordinates of all vertices
 	gl_Position = camMatrix * vec4(crntPos, 1.0);
 }

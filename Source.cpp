@@ -72,7 +72,7 @@ int main() {
 	
 	
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPos = glm::vec3(100.5f, 100.5f, 100.5f);
+	glm::vec3 lightPos = glm::vec3(1, 1, 1);//glm::vec3(2.0f, 2.79f, -2.9f);
 	glm::mat4 lightModel = glm::mat4(1.0f);
 	lightModel = glm::translate(lightModel, lightPos);
 
@@ -94,7 +94,7 @@ int main() {
 	glEnable(GL_DEBUG_OUTPUT);
 	//glDebugMessageCallback(MessageCallback, 0);
 
-	Model model("Resources/Model/Map/scene.gltf");
+	Model model("Resources/Model/airPlane/scene.gltf");
 
 	////////////shadowMap my_shadowMap = shadowMap();
 
@@ -104,8 +104,8 @@ int main() {
 
 
 	shadowMap shadows = shadowMap();
-
 	shadows.setLight(lightPos);
+
 
 
 	//fps counter
@@ -114,6 +114,7 @@ int main() {
 	double timeDiff;
 	unsigned int counter = 0;
 
+	bool isfirstFrame = true;
 
 	while (!glfwWindowShouldClose(window)) {
 		GLenum err;
@@ -136,8 +137,9 @@ int main() {
 
 			
 		}
-		glEnable(GL_DEPTH_TEST);
+		//glEnable(GL_DEPTH_TEST);
 
+		std::cout << camera.Position.x  << " | " << camera.Position.y << " | " << camera.Position.z << "\n";
 		shadows.prepareRender();
 
 		// Draw scene for shadow map
@@ -147,27 +149,22 @@ int main() {
 
 		shaderProgram.Activate();
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "lightProjection"), 1, GL_FALSE, glm::value_ptr(shadows.lightProjection));
-
+			
 		// Bind the Shadow Map
 		glActiveTexture(GL_TEXTURE0 + 2);
 		glBindTexture(GL_TEXTURE_2D, shadows.my_shadowMap);
-		glUniform1i(glGetUniformLocation(shaderProgram.ID, "shadowMap"), 2);
-
+		glUniform1i(glGetUniformLocation(shaderProgram.ID, "shadowMap"),  2);
 		glClearColor(0.85f, 0.85f, 0.90f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		camera.Inputs(window);
 
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 
-		
 		model.Draw(shaderProgram, camera);
 		skybox.Render(camera, width, height);
-		
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-		
 
 	}
 	///////////my_shadowMap.Delete();
