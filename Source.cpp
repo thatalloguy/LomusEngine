@@ -41,7 +41,7 @@ MessageCallback(GLenum source,
 
 int main() {
 	glfwInit();
-	
+
 	//Window
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -58,8 +58,8 @@ int main() {
 	//render
 	gladLoadGL();
 	glViewport(0, 0, width, height);
-	
-	
+
+
 
 	//SKYBOOXXX
 
@@ -107,59 +107,11 @@ int main() {
 
 	//////cubeShadowMap pointShadow(2048, 2048, 100.0f, lightPos, shadowCubeMapProgram);
 
-	unsigned int pointShadowMapFBO;
-	glGenFramebuffers(1, &pointShadowMapFBO);
 	float farPlane = 100.0f;
 	unsigned int shadowMapWidth = 2048;
 	unsigned int shadowMapHeight = 2048;
-
-
-	// Texture for Cubemap Shadow Map FBO
-	unsigned int depthCubemap;
-	glGenTextures(1, &depthCubemap);
-
-	glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
-	for (unsigned int i = 0; i < 6; ++i)
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
-			shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, pointShadowMapFBO);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-	// Matrices needed for the light's perspective on all faces of the cubemap
-	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float) shadowMapWidth / shadowMapHeight, 0.1f, farPlane);
-	glm::mat4 shadowTransforms[] =
-	{
-	shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)),
-	shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)),
-	shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)),
-	shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)),
-	shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)),
-	shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0))
-	};
-	// Export all matrices to shader
-	shadowCubeMapProgram.Activate();
-	glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[0]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[0]));
-	glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[1]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[1]));
-	glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[2]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[2]));
-	glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[3]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[3]));
-	glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[4]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[4]));
-	glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[5]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[5]));
-	glUniform3f(glGetUniformLocation(shadowCubeMapProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-	glUniform1f(glGetUniformLocation(shadowCubeMapProgram.ID, "farPlane"), farPlane);
-
-
-
-
+	
+	cubeShadowMap cubeShadow(shadowMapWidth, shadowMapHeight, farPlane, lightPos, shadowCubeMapProgram);
 
 
 	//fps counter
@@ -189,82 +141,44 @@ int main() {
 			prevTime = crntTime;
 			counter = 0;
 
-			
+
 		}
 
 		//lightPos.x += 0.01f;
 
-		
-
-
-		glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, farPlane);
-		glm::mat4 shadowTransforms[] =
-		{
-		shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)),
-		shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)),
-		shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)),
-		shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)),
-		shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)),
-		shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0))
-		};
-		// Export all matrices to shader
-		shadowCubeMapProgram.Activate();
-		glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[0]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[0]));
-		glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[1]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[1]));
-		glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[2]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[2]));
-		glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[3]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[3]));
-		glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[4]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[4]));
-		glUniformMatrix4fv(glGetUniformLocation(shadowCubeMapProgram.ID, "shadowMatrices[5]"), 1, GL_FALSE, glm::value_ptr(shadowTransforms[5]));
-		glUniform3f(glGetUniformLocation(shadowCubeMapProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-		glUniform1f(glGetUniformLocation(shadowCubeMapProgram.ID, "farPlane"), farPlane);
 
 
 
-		
 
 
+		cubeShadow.RenderPhaseBegin(shadowMapWidth, shadowMapHeight);
 
-		///myLight.PrepareRender(castShadow);
-		////////////////pointShadow.RenderPhaseBegin();
-		glBindFramebuffer(GL_FRAMEBUFFER, pointShadowMapFBO);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glViewport(0, 0, shadowMapWidth, shadowMapHeight);
 		// Draw scene for shadow map
 		ground.Draw(shadowCubeMapProgram, camera);  //ground.Draw(myLight.myShadow.shadowMapShader, camera);
 		trees.Draw(shadowCubeMapProgram, camera);   //trees.Draw(myLight.myShadow.shadowMapShader, camera);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		// Switch back to the default viewport
-		glViewport(0, 0, width, height);
-		////////////////pointShadow.RenderPhaseEnd(shaderProgram, 100.0f);
-		//myLight.UnprepareRender(castShadow, width, height, shaderProgram);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
+		cubeShadow.RenderPhaseEnd(width, height);
+
 		camera.Inputs(window);
 
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 
-		shaderProgram.Activate();
 		
-		glUniform1f(glGetUniformLocation(shaderProgram.ID, "farPlane"), farPlane);
+		cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
 
-		glActiveTexture(GL_TEXTURE0 + 2);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
-		glUniform1i(glGetUniformLocation(shaderProgram.ID, "shadowCubeMap"), 2);
-		glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 		ground.Draw(shaderProgram, camera);
 		trees.Draw(shaderProgram, camera);
 		skybox.Render(camera, width, height);
-		
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
 	}
 	///////////my_shadowMap.Delete();
-	
+
 	//myLight.Delete(castShadow);
 	skybox.Delete();
 	shaderProgram.Delete();
-	glDeleteFramebuffers(1, &pointShadowMapFBO);
 	shadowCubeMapProgram.Delete();
 	glfwDestroyWindow(window);
 	glfwTerminate();

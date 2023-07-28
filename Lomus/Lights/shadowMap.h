@@ -47,21 +47,15 @@ class cubeShadowMap {
 
 public:
 	cubeShadowMap(int shadowMapWidth, int shadowMapHeight, float farPlane, glm::vec3 lightPos, Shader cubeMapShadowShader);
-	void RenderPhaseBegin();
-	void RenderPhaseEnd(Shader RenderShader, float farPlane);
+	void RenderPhaseBegin(int shadowMapWidth, int shadowMapHeight);
+	void RenderPhaseEnd(float windowWidth, float windowHeight);
+	void UpdateShader(Shader DefaultShader, float farPlane, glm::vec3 lightPos);
 	void Delete();
+	void updateShadowMap(float farPlane, glm::vec3 lightPos, Shader shadowCubeMapProgram, int shadowMapWidth, int shadowMapHeight);
 
 
 private:
-	unsigned int shadowMapWidth;
-	unsigned int shadowMapHeight;
-
 	unsigned int pointShadowMapFBO;
 	unsigned int depthCubemap;
-
-	glm::mat4 shadowProj;
-	glm::mat4 shadowTransforms[5];
-
-
 };
 
