@@ -11,9 +11,9 @@ class Model
 {
 public:
 	// Loads in a model from a file and stores tha information in 'data', 'JSON', and 'file'
-	Model(const char* file);
-
-	void Draw(Shader& shader, Camera& camera);
+	void load(const char* file);
+	Model();
+	void Draw(Shader& shader, Camera& camera, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
 
 private:
 	// Variables for easy access

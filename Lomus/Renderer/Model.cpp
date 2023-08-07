@@ -1,6 +1,6 @@
 #include"Model.h"
 
-Model::Model(const char* file)
+void Model::load(const char* file)
 {
 	// Make a JSON object
 	std::string text = get_file_contents(file);
@@ -14,7 +14,11 @@ Model::Model(const char* file)
 	traverseNode(0);
 }
 
-void Model::Draw(Shader& shader, Camera& camera)
+Model::Model()
+{
+}
+
+void Model::Draw(Shader& shader, Camera& camera, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
 {
 	// Go over all meshes and draw each one
 	for (unsigned int i = 0; i < meshes.size(); i++)
@@ -241,7 +245,7 @@ std::vector<Texture> Model::getTextures()
 
 		// uri of current texture
 		std::string texPath = JSON["images"][i]["uri"];
-		std::cout << "texture: " <<  texPath << "\n";
+		std::cout << "texture: " << texPath << "\n";
 		// Check if the texture has already been loaded
 		bool skip = false;
 		for (unsigned int j = 0; j < loadedTexName.size(); j++)

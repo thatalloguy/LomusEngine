@@ -1,17 +1,27 @@
 #include "GameObject.h"
 
-GameObject::GameObject(Model& model, Shader shader, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
+
+GameObject::GameObject(glm::vec3 position, glm::quat rotation, glm::vec3 scale, string name)
 {
+	GameObject::position = position;
+	GameObject::rotation = rotation;
+	GameObject::scale = scale;
+	GameObject::name = name;
+	GameObject::id = -1;
 }
 
-void GameObject::Render(Camera camera)
+
+void GameObject::createModel(const char* path)
 {
+	model.load(path);
 }
 
-void GameObject::Update(Camera camera)
+
+void GameObject::Draw(Shader& defaultShader, Camera& camera)
 {
+	model.Draw(defaultShader, camera, GameObject::position, GameObject::rotation, GameObject::scale);
 }
 
-void GameObject::changeShader(Shader& shader)
+void GameObject::Delete()
 {
 }

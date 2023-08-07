@@ -7,7 +7,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <stdio.h>
 //Engine
+
 #include "Lomus/Renderer/Texture.h"
+
 #include "Lomus/Shader/ShaderClass.h"
 #include "Lomus/Renderer/Camera.h"
 #include "Lomus/Renderer/Mesh.h"
@@ -17,6 +19,7 @@
 
 #include "Lomus//Lights/LightManager.h"
 #include "Lomus/Lights/shadowMap.h"
+#include "Lomus/Core/GameObject.h"
 //Other
 #include "Libs/Include/stb/std_image.h"
 
@@ -91,8 +94,8 @@ int main() {
 
 	//lightManager.createNewLight(lightPos, lightColor, lightInten, "light1");
 	//lightManager.createNewLight(glm::vec3(0, 0, 0), glm::vec4(1, 1, 1, 1), 10, "light2");
-	lightManager.createNewLight(glm::vec3(0, 4, 0), glm::vec4(0.1f, 0.1f, 0.1f, 1), 5, "light42");
-	lightManager.createNewLight(glm::vec3(0, 4, 10), glm::vec4(0.1f, 0.1f, 0.4f, 1), 1, "light2");
+	lightManager.createNewLight(glm::vec3(0, 50, 0), glm::vec4(0.1f, 0.1f, 0.1f, 1), 50, "light42");
+	//lightManager.createNewLight(glm::vec3(0, 4, 10), glm::vec4(0.1f, 0.1f, 0.4f, 1), 1, "light2");
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 	
@@ -106,8 +109,10 @@ int main() {
 
 	glEnable(GL_DEBUG_OUTPUT);
 	//glDebugMessageCallback(MessageCallback, 0);
+	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "bob");
+	ground.createModel("Resources/Model/ground/scene.gltf");
 
-	Model ground("Resources/Model/ground/scene.gltf");
+	///Model ground("Resources/Model/ground/scene.gltf");
 	//Model trees("Resources/Model/trees/scene.gltf");
 
 	////////////shadowMap my_shadowMap = shadowMap();

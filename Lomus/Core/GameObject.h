@@ -1,17 +1,30 @@
 #pragma once
 #include "../Renderer/Model.h"
+#include <glm/glm.hpp>
+#include <string>
 
-class GameObject {
+using namespace std;
 
+class GameObject
+{
 public:
-	GameObject(Model& model, Shader shader, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
-
-	void Render(Camera camera); // Only Renders the object
-	void Update(Camera camera); // Renders + anything else like physics
-
-	void changeShader(Shader& shader);
-
 	glm::vec3 position;
-	glm::vec3 rotation;
+	glm::quat rotation;
 	glm::vec3 scale;
+
+	string name;
+	int id;
+
+	
+	GameObject(glm::vec3 position, glm::quat rotation, glm::vec3 scale, string name);
+	
+	void createModel(const char* path);
+
+	void Draw(Shader& defaultShader, Camera& camera);
+
+	void Delete();
+private:
+	//Components
+	Model model;
 };
+
