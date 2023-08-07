@@ -20,6 +20,7 @@
 #include "Lomus//Lights/LightManager.h"
 #include "Lomus/Lights/shadowMap.h"
 #include "Lomus/Core/GameObject.h"
+#include "Lomus/Core/SceneManager.h"
 //Other
 #include "Libs/Include/stb/std_image.h"
 
@@ -112,12 +113,13 @@ int main() {
 	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "bob");
 	ground.createModel("Resources/Model/ground/scene.gltf");
 
-	///Model ground("Resources/Model/ground/scene.gltf");
-	//Model trees("Resources/Model/trees/scene.gltf");
 
-	////////////shadowMap my_shadowMap = shadowMap();
+	//Scene
 
-	////////////my_shadowMap.setLight(lightPos);
+	SceneManager sceneManager;
+	sceneManager.createNewScene("mainScene");
+	sceneManager.setCurrentScene("mainScene");
+	sceneManager.addGameObject(ground);
 
 	//////cubeShadowMap pointShadow(2048, 2048, 100.0f, lightPos, shadowCubeMapProgram);
 
@@ -169,7 +171,7 @@ int main() {
 		cubeShadow.RenderPhaseBegin(shadowMapWidth, shadowMapHeight);
 
 		// Draw scene for shadow map
-		ground.Draw(shadowCubeMapProgram, camera);  //ground.Draw(myLight.myShadow.shadowMapShader, camera);
+		sceneManager.renderCurrentScene(shadowCubeMapProgram, camera);//ground.Draw(shadowCubeMapProgram, camera);  
 		//trees.Draw(shadowCubeMapProgram, camera);   //trees.Draw(myLight.myShadow.shadowMapShader, camera);
 		
 		cubeShadow.RenderPhaseEnd(width, height);
@@ -181,7 +183,7 @@ int main() {
 		
 		cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
 		
-		ground.Draw(shaderProgram, camera);
+		sceneManager.renderCurrentScene(shaderProgram, camera);	//ground.Draw(shaderProgram, camera);
 		//trees.Draw(shaderProgram, camera);
 		skybox.Render(camera, width, height);
 		
@@ -196,6 +198,7 @@ int main() {
 	lightManager.Delete();
 	shaderProgram.Delete();
 	shadowCubeMapProgram.Delete();
+	sceneManager.Delete();
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	////////////pointShadow.Delete();
