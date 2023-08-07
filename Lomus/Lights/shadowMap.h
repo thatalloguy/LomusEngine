@@ -46,7 +46,7 @@ private:
 class cubeShadowMap {
 
 public:
-	cubeShadowMap(int shadowMapWidth, int shadowMapHeight, float farPlane, glm::vec3 lightPos, Shader cubeMapShadowShader);
+	void Init(int shadowMapWidth, int shadowMapHeight, float farPlane, glm::vec3 lightPos, Shader cubeMapShadowShader);
 	void RenderPhaseBegin(int shadowMapWidth, int shadowMapHeight);
 	void RenderPhaseEnd(float windowWidth, float windowHeight);
 	void UpdateShader(Shader DefaultShader, float farPlane, glm::vec3 lightPos);

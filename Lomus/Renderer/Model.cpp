@@ -14,12 +14,12 @@ Model::Model(const char* file)
 	traverseNode(0);
 }
 
-void Model::Draw(Shader& shader, Camera& camera, glm::vec3 translation, glm::quat rotation, glm::vec3 scale)
+void Model::Draw(Shader& shader, Camera& camera)
 {
 	// Go over all meshes and draw each one
 	for (unsigned int i = 0; i < meshes.size(); i++)
 	{
-		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[i], translation, rotation, scale);
+		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[i]);
 	}
 }
 
@@ -238,15 +238,17 @@ std::vector<Texture> Model::getTextures()
 	// Go over all images
 	for (unsigned int i = 0; i < JSON["images"].size(); i++)
 	{
+
 		// uri of current texture
 		std::string texPath = JSON["images"][i]["uri"];
-
+		std::cout << "texture: " <<  texPath << "\n";
 		// Check if the texture has already been loaded
 		bool skip = false;
 		for (unsigned int j = 0; j < loadedTexName.size(); j++)
 		{
 			if (loadedTexName[j] == texPath)
 			{
+				std::cout << "found? texture: " << texPath << "\n";
 				textures.push_back(loadedTex[j]);
 				skip = true;
 				break;
@@ -257,17 +259,19 @@ std::vector<Texture> Model::getTextures()
 		if (!skip)
 		{
 			// Load diffuse texture
-			if (texPath.find("baseColor") != std::string::npos)
+			if (texPath.find("baseColor") != std::string::npos || texPath.find("diffuse") != std::string::npos)
 			{
 				Texture diffuse = Texture((fileDirectory + texPath).c_str(), "diffuse", loadedTex.size());
+				std::cout << "found diffuse texture: " << fileDirectory + texPath << "\n";
 				textures.push_back(diffuse);
 				loadedTex.push_back(diffuse);
 				loadedTexName.push_back(texPath);
 			}
 			// Load specular texture
-			else if (texPath.find("metallicRoughness") != std::string::npos)
+			else if (texPath.find("metallicRoughness") != std::string::npos || texPath.find("specular") != std::string::npos)
 			{
 				Texture specular = Texture((fileDirectory + texPath).c_str(), "specular", loadedTex.size());
+				std::cout << "found specular texture: " << fileDirectory + texPath << "\n";
 				textures.push_back(specular);
 				loadedTex.push_back(specular);
 				loadedTexName.push_back(texPath);

@@ -1,5 +1,11 @@
 #version 330 core
 
+struct Light {
+    vec3 lightPosition;
+    vec3 lightColor;
+    float lightInten;
+};
+
 // Outputs colors in RGBA
 out vec4 FragColor;
 
@@ -22,20 +28,26 @@ uniform sampler2D specular0;
 uniform sampler2D shadowMap;
 uniform samplerCube shadowCubeMap;
 // Gets the color of the light from the main function
-uniform vec4 lightColor;
+///uniform vec4 lightColor;
 // Gets the position of the light from the main function
-uniform vec3 lightPos;
-uniform float lightInten;
+///uniform vec3 lightPos;
+///uniform float lightInten;
+
 // Gets the position of the camera from the main function
 uniform vec3 camPos;
 uniform bool isTransparent;
 uniform float farPlane;
-
+uniform int lightType;
 uniform vec2 fog;
+uniform float castShadow;
+
+uniform int numLights;
+uniform Light lights[100]; 
 
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(vec4 fragPosLightSpace, Light light)
 {
+    vec3 lightPos = vec3(light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
@@ -70,9 +82,9 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     return shadow;
 }  
 
-float ShadowCubeCalculation(vec3 fragPos)
+float ShadowCubeCalculation(vec3 fragPos, Light light)
 {
-    
+    vec3 lightPos = vec3(light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]);
     // get vector between fragment position and light position
     vec3 fragToLight = fragPos - lightPos;
     // use the light to fragment vector to sample from the depth map    
@@ -87,15 +99,16 @@ float ShadowCubeCalculation(vec3 fragPos)
 
     return shadow;
 }  
-vec4 pointLightB() {
-    vec3 fixedLightPos = vec3(-lightPos.x, lightPos.y, -lightPos.z);
+
+vec4 pointLightB(Light light) {
+    vec3 fixedLightPos = vec3(light.lightPosition.x, light.lightPosition.y, light.lightPosition.z);
     vec3 lightVec = fixedLightPos - crntPos;
 
 	// intensity of light with respect to distance
 	float dist = length(lightVec);
 	float a = 0.0003f;
 	float b = 0.00002f;
-	float inten = 1.0f / (a * dist * dist + b * dist + 1.0f);
+	float inten = light.lightInten / (a * dist * dist + b * dist + 1.0f);
 
 	// ambient lighting
 	float ambient = 0.20f;
@@ -115,22 +128,24 @@ vec4 pointLightB() {
 		float specAmount = pow(max(dot(normal, halfwayVec), 0.0f), 16);
 		specular = specAmount * specularLight;
 	};
-
-	 float shadow = ShadowCubeCalculation(fragPos);        
-
-	return (vec4(1, 1, 1, 1) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(specular0, texCoord).r * specular * (1.0f - shadow) * inten) * lightColor;
+    float shadow = 0;
+    if (castShadow > 0) {
+	     shadow = ShadowCubeCalculation(fragPos, light) * castShadow;        
+    }
+	return (texture(diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(specular0, texCoord).r * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
 
 
 }
-vec4 pointLight()
+vec4 directLight(Light light)
 {
+
     vec3 color = vec3(1, 1, 1);//texture(diffuse0, texCoord).rgb;
     vec3 normal = normalize(Normal);
     vec3 lightColor = vec3(0.3);
     // ambient
     vec3 ambient = 0.3 * color;
     // diffuse
-    vec3 lightDir = normalize(lightPos - crntPos);
+    vec3 lightDir = normalize(vec3(light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]) - crntPos);
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor;
     // specular
@@ -141,7 +156,7 @@ vec4 pointLight()
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
     vec3 specular = spec * lightColor;    
     // calculate shadow
-    float shadow = ShadowCubeCalculation(fragPos);                   
+    float shadow = ShadowCalculation(fragPosLight, light);                   
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
     return vec4(lighting, 1);
 }
@@ -162,12 +177,28 @@ float logisticDepth(float depth, float steepness = 0.5f, float offset = 5.0f)
 
 void main()
 {
+    vec4 color = vec4(0);
 	// outputs final color
 	float depth = logisticDepth(gl_FragCoord.z);
 	if (fog.x != 0) {
-		FragColor = pointLightB() * (1.0f - depth) + vec4(depth * vec3(0.85f, 0.85f, 0.90f), 1.0f);
+        if (lightType == 0) {
+            //////////// THE DIRECT LIGHT IS SET BE DEFAULT TO THE FIRST CREATED LIGHT PLEASE CHANGE THIS ONCE YOU HAVE A PROPER IMPLEMNTATION
+            color += directLight(lights[0]) * (1.0f - depth) + vec4(depth * vec3(0.85f, 0.85f, 0.90f), 1.0f);
+        } else {
+		   for (int i = 0; i < numLights; i++) {
+                 color += pointLightB(lights[i]) * (1.0f - depth) + vec4(depth * vec3(0.85f, 0.85f, 0.90f), 1.0f);
+            } 
+        }
 	} else {
-		FragColor = pointLightB();
+		if (lightType == 0) {
+            color += directLight(lights[0]);
+        } else {
+            for (int i = 0; i < numLights; i++) {
+                    color += pointLightB(lights[i]);
+            }
+        }
 	}
+    color.a = 1;
+    FragColor = color;
 	
 }

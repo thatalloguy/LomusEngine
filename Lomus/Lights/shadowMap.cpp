@@ -93,7 +93,7 @@ void shadowMap::initShader()
 ///CUBE MAP SHADOWS 
 //-----------------
 
-cubeShadowMap::cubeShadowMap( int shadowMapWidth, int shadowMapHeight, float farPlane, glm::vec3 lightPos, Shader cubeMapShadowShader) {
+void cubeShadowMap::Init( int shadowMapWidth, int shadowMapHeight, float farPlane, glm::vec3 lightPos, Shader cubeMapShadowShader) {
 
 	glGenFramebuffers(1, &pointShadowMapFBO);
 	

@@ -15,7 +15,7 @@
 #include "Lomus/Renderer/Skybox.h"
 #include "Lomus/Utils/ToolBox.h"
 
-#include "Lomus//Lights/Light.h"
+#include "Lomus//Lights/LightManager.h"
 #include "Lomus/Lights/shadowMap.h"
 //Other
 #include "Libs/Include/stb/std_image.h"
@@ -71,22 +71,31 @@ int main() {
 	Shader shaderProgram("Lomus/Shader/shaders/default.vert", "Lomus/Shader/shaders/default.frag");
 	Shader shadowCubeMapProgram("Lomus/Shader/shaders/shadowCubeMap.vert", "Lomus/Shader/shaders/shadowCubeMap.frag", "Lomus/Shader/shaders/shadowCubeMap.geom");
 	//Light myLight;
-	glm::vec3 lightPos = glm::vec3(0, 3, 0);
-	glm::vec4 lightColor = glm::vec4(0.7f, 1, 1, 1);
-	float lightInten = 70.0f;
+	glm::vec3 lightPos = glm::vec3(0, 5, 0);
+	glm::vec4 lightColor = glm::vec4(1.0f, 0, 0, 1);
+	float lightInten = 100.0f;
 	/////myLight.Init(lightPos, glm::vec3(0, 0, 0), glm::vec4(0.7f, 1, 1, 1), 70.0f,  shaderProgram);
 	///bool castShadow = true;
 	//myLight.InitShadow(2048, 2048);
 
 	shaderProgram.Activate();
 	//glUniform2f(glGetUniformLocation(shaderProgram.ID, "fog"), 0.1f, 100.0f);
-	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
-	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-	glUniform1f(glGetUniformLocation(shaderProgram.ID, "lightInten"), lightInten);
+	//glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+	//glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+	//glUniform1f(glGetUniformLocation(shaderProgram.ID, "lightInten"), lightInten);
+	glUniform1f(glGetUniformLocation(shaderProgram.ID, "castShadow"), 0.0f);
+	glUniform1i(glGetUniformLocation(shaderProgram.ID, "lightType"), 1);
 
+	LightManager lightManager;
+	lightManager.Init();
+
+	//lightManager.createNewLight(lightPos, lightColor, lightInten, "light1");
+	//lightManager.createNewLight(glm::vec3(0, 0, 0), glm::vec4(1, 1, 1, 1), 10, "light2");
+	lightManager.createNewLight(glm::vec3(0, 4, 0), glm::vec4(0.1f, 0.1f, 0.1f, 1), 5, "light42");
+	lightManager.createNewLight(glm::vec3(0, 4, 10), glm::vec4(0.1f, 0.1f, 0.4f, 1), 1, "light2");
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
-
+	
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -99,7 +108,7 @@ int main() {
 	//glDebugMessageCallback(MessageCallback, 0);
 
 	Model ground("Resources/Model/ground/scene.gltf");
-	Model trees("Resources/Model/trees/scene.gltf");
+	//Model trees("Resources/Model/trees/scene.gltf");
 
 	////////////shadowMap my_shadowMap = shadowMap();
 
@@ -108,10 +117,11 @@ int main() {
 	//////cubeShadowMap pointShadow(2048, 2048, 100.0f, lightPos, shadowCubeMapProgram);
 
 	float farPlane = 100.0f;
-	unsigned int shadowMapWidth = 2048;
-	unsigned int shadowMapHeight = 2048;
+	unsigned int shadowMapWidth = 1;
+	unsigned int shadowMapHeight = 1;
 	
-	cubeShadowMap cubeShadow(shadowMapWidth, shadowMapHeight, farPlane, lightPos, shadowCubeMapProgram);
+	cubeShadowMap cubeShadow;
+	cubeShadow.Init(shadowMapWidth, shadowMapHeight, farPlane, lightPos, shadowCubeMapProgram);
 
 
 	//fps counter
@@ -127,7 +137,7 @@ int main() {
 		if ((err = glGetError()) != GL_NO_ERROR)
 		{
 			std::cout << "Error: " << err << " \n";
-			return -1;
+			//return -1;
 		}
 
 
@@ -146,8 +156,8 @@ int main() {
 
 		//lightPos.x += 0.01f;
 
-
-
+		
+		
 
 
 
@@ -155,29 +165,30 @@ int main() {
 
 		// Draw scene for shadow map
 		ground.Draw(shadowCubeMapProgram, camera);  //ground.Draw(myLight.myShadow.shadowMapShader, camera);
-		trees.Draw(shadowCubeMapProgram, camera);   //trees.Draw(myLight.myShadow.shadowMapShader, camera);
+		//trees.Draw(shadowCubeMapProgram, camera);   //trees.Draw(myLight.myShadow.shadowMapShader, camera);
 		
 		cubeShadow.RenderPhaseEnd(width, height);
 
 		camera.Inputs(window);
 
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
-
+		lightManager.updateShader(shaderProgram);
 		
 		cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
-
+		
 		ground.Draw(shaderProgram, camera);
-		trees.Draw(shaderProgram, camera);
+		//trees.Draw(shaderProgram, camera);
 		skybox.Render(camera, width, height);
-
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
 	}
 	///////////my_shadowMap.Delete();
-
+	
 	//myLight.Delete(castShadow);
 	skybox.Delete();
+	lightManager.Delete();
 	shaderProgram.Delete();
 	shadowCubeMapProgram.Delete();
 	glfwDestroyWindow(window);
