@@ -1,4 +1,5 @@
 #pragma once
+#include "../Core/SceneManager.h"
 #include "../Shader/ShaderClass.h"
 #include <glm/glm.hpp>
 #include <unordered_map>
@@ -20,21 +21,21 @@ class LightManager
 public:
 	void Init();
 	void Delete();
-	void createNewLight(glm::vec3 position, glm::vec4 color, float inten, string id);
-	/*
-	glm::vec3 getLightPosition(string id);
-	glm::vec4 getLightColor(string id);
-	float     getLightInten(string id);
-	*/
-	void setLightPosition(string id, glm::vec3 newPosition);
-	void setLightColor(string id,    glm::vec4    newColor);
-	void setLightInten(string id,    float        newInten);
+	void createNewLight(Scene scene, glm::vec3 position, glm::vec4 color, float inten, string id);
+	
+	glm::vec3 getLightPosition(Scene& scene, string id);
+	glm::vec4 getLightColor(Scene& scene, string id);
+	float     getLightInten(Scene& scene, string id);
+	
+	void setLightPosition(Scene& scene, string id, glm::vec3 newPosition);
+	void setLightColor(Scene& scene, string id,    glm::vec4    newColor);
+	void setLightInten(Scene& scene, string id,    float        newInten);
 
-	void updateShader(Shader shader);
+	void updateShader(Shader shader, Scene scene);
 
-	void deleteLight(string id);
+	void deleteLight(Scene& scene, string id);
 private:
-	unordered_map<string, int> lightIdMap;
+	unordered_map<string, unordered_map<string,int>> lightIdMap;
 	bool castShadow = false;
 	Light currentShadowCaster;
 	Light lights[100];

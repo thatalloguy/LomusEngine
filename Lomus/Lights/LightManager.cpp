@@ -11,11 +11,13 @@ void LightManager::Delete()
 
 }
 
-void LightManager::createNewLight(glm::vec3 position, glm::vec4 color, float inten, string id)
+void LightManager::createNewLight(Scene scene, glm::vec3 position, glm::vec4 color, float inten, string id)
 {
 	std::cout << "POSITION: " << position.x << " | " << position.y << " | " << position.z << "\n";
 	std::cout << "COLOR: " << color.x << " | " << color.y << " | " << color.z << "\n";
-	lightIdMap.emplace(id, placeId);
+	unordered_map<string, int> newMap;
+	newMap.emplace(id, placeId);
+	lightIdMap.emplace(scene.name, newMap);
 	
 	Light newLight = { {position.x, position.y, position.z}, color.r, color.g, color.b, color.a, inten };
 	lights[placeId] = newLight;
@@ -23,7 +25,7 @@ void LightManager::createNewLight(glm::vec3 position, glm::vec4 color, float int
 }
 
 
-void LightManager::updateShader(Shader shader)
+void LightManager::updateShader(Shader shader, Scene scene)
 {
 
 	shader.Activate();
@@ -41,50 +43,50 @@ void LightManager::updateShader(Shader shader)
 	
 }
 
-/*
-float LightManager::getLightPosition(string id)
+
+glm::vec3 LightManager::getLightPosition(Scene& scene, string id)
 {
-	int findId = lightIdMap.at(id);
-	return lights[findId].lightPosition;
+	int findId = lightIdMap.at(scene.name).at(id);
+	return glm::vec3(lights[findId].lightPosition[0], lights[findId].lightPosition[1], lights[findId].lightPosition[2]);
 }
 
-glm::vec4 LightManager::getLightColor(string id)
+glm::vec4 LightManager::getLightColor(Scene& scene, string id)
 {
-	int findId = lightIdMap.at(id);
-	return lights[findId].lightColor;
+	int findId = lightIdMap.at(scene.name).at(id);
+	return glm::vec4(lights[findId].lightColor_r, lights[findId].lightColor_g, lights[findId].lightColor_b, lights[findId].lightColor_a);
 }
 
-float LightManager::getLightInten(string id)
+float LightManager::getLightInten(Scene& scene, string id)
 {
-	int findId = lightIdMap.at(id);
+	int findId = lightIdMap.at(scene.name).at(id);
 	return lights[findId].lightInten;
 }
-*/
 
-void LightManager::setLightPosition(string id, glm::vec3 newPosition)
+
+void LightManager::setLightPosition(Scene& scene, string id, glm::vec3 newPosition)
 {
-	int findId = lightIdMap.at(id);
+	int findId = lightIdMap.at(scene.name).at(id);
 	lights[findId].lightPosition[1] = newPosition.x;
 	lights[findId].lightPosition[2] = newPosition.y;
 	lights[findId].lightPosition[3] = newPosition.z;
 }
 
-void LightManager::setLightColor(string id, glm::vec4 newColor)
+void LightManager::setLightColor(Scene& scene, string id, glm::vec4 newColor)
 {
-	int findId = lightIdMap.at(id);
+	int findId = lightIdMap.at(scene.name).at(id);
 	lights[findId].lightColor_r = newColor.r;
 	lights[findId].lightColor_g = newColor.g;
 	lights[findId].lightColor_b = newColor.b;
 	lights[findId].lightColor_a = newColor.a;
 }
 
-void LightManager::setLightInten(string id, float newInten)
+void LightManager::setLightInten(Scene& scene, string id, float newInten)
 {
-	int findId = lightIdMap.at(id);
+	int findId = lightIdMap.at(scene.name).at(id);
 	lights[findId].lightInten = newInten;
 }
 
-void LightManager::deleteLight(string id)
+void LightManager::deleteLight(Scene& scene, string id)
 {
 	lightIdMap.erase(id);
 }

@@ -27,7 +27,7 @@ Scene SceneManager::getCurrentScene()
 	return currentScene;
 }
 
-void SceneManager::renderCurrentScene(Shader& shader,Camera& camera)
+void SceneManager::renderCurrentScene(Shader& shader, Camera& camera)
 {
 	for (int i = 0; i < currentScene.gameObjects.size(); i++) {
 		currentScene.gameObjects.at(i).Draw(shader, camera);

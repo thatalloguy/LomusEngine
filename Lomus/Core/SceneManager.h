@@ -26,4 +26,3 @@ private:
 	unordered_map<string, Scene> scenes;
 	Scene currentScene;
 };
-
