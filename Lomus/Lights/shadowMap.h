@@ -26,7 +26,7 @@ public:
 
 	glm::mat4 lightProjection;
 	unsigned int my_shadowMap;
-	Shader shadowMapShader = Shader("Lomus/Shader/shaders/shadowMap.vert", "Lomus/Shader/shaders/shadowMap.frag");
+	Shader shadowMapShader = Shader("../../../Lomus/Shader/shaders/shadowMap.vert", "../../../Lomus/Shader/shaders/shadowMap.frag");
 private:
 	unsigned int shadowMapFBO;
 	unsigned int shadowMapWidth;

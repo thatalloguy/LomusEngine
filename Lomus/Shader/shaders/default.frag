@@ -28,10 +28,10 @@ uniform sampler2D specular0;
 uniform sampler2D shadowMap;
 uniform samplerCube shadowCubeMap;
 // Gets the color of the light from the main function
-///uniform vec4 lightColor;
+uniform vec4 lightColor;
 // Gets the position of the light from the main function
-///uniform vec3 lightPos;
-///uniform float lightInten;
+uniform vec3 lightPos;
+uniform float lightInten;
 
 // Gets the position of the camera from the main function
 uniform vec3 camPos;
@@ -84,7 +84,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, Light light)
 
 float ShadowCubeCalculation(vec3 fragPos, Light light)
 {
-    vec3 lightPos = vec3(light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]);
+    //vec3(light.lightPosition.x, light.lightPosition.x, light.lightPosition.x);
     // get vector between fragment position and light position
     vec3 fragToLight = fragPos - lightPos;
     // use the light to fragment vector to sample from the depth map    
@@ -129,9 +129,7 @@ vec4 pointLightB(Light light) {
 		specular = specAmount * specularLight;
 	};
     float shadow = 0;
-    if (castShadow > 0) {
-	     shadow = ShadowCubeCalculation(fragPos, light) * castShadow;        
-    }
+    shadow = ShadowCubeCalculation(fragPos, light) * castShadow;        
 	return (texture(diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(specular0, texCoord).r * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
 
 
