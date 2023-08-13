@@ -12,6 +12,8 @@ public:
 	glm::quat rotation;
 	glm::vec3 scale;
 
+	
+
 	string name;
 	int id;
 

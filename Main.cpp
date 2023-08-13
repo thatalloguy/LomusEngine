@@ -23,30 +23,16 @@
 
 #include "Lomus/Core/GameObject.h"
 #include "Lomus/Core/SceneManager.h"
-
+#include "Lomus/Core/Console.h"
 #include "Lomus/Shader/ShaderClass.h"
 
 //Imgui
 #include "Thirdparty/imgui/imgui.h"
 #include "Thirdparty/imgui/imgui_impl_glfw.h"
-#include "Thirdparty/imgui/imgui_impl_opengl3.h"
+#include "Thirdparty/imgui/imgui_impl_opengl3.h" 
 
-
-const unsigned int width = 800;
-const unsigned int height = 800;
-
-void GLAPIENTRY MessageCallback(GLenum source,
-								GLenum type,
-								GLuint id,
-								GLenum severity,
-								GLsizei length,
-								const GLchar* message,
-								const void* userParam)
-{
-	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-		type, severity, message);
-}
+const unsigned int width = 1280;
+const unsigned int height = 720;
 
 static bool GLLogCall(const char* function, const char* file, int line) {
 	while (GLenum error = glGetError()) {
@@ -57,6 +43,12 @@ static bool GLLogCall(const char* function, const char* file, int line) {
 	return true;
 
 }
+
+void mySillyFunction(std::vector<std::string> args, Camera& camera, SceneManager& sceneManager, Console &console) {
+	std::string message = "[OUTPUT] Hello World!: " + args[0] + "\n";
+	console.addConsoleLog(message.c_str());
+}
+
 
 int main() {
 	
@@ -73,7 +65,6 @@ int main() {
 		glfwTerminate();
 		return -1;
 	}
-
 	glfwMakeContextCurrent(window);
 	gladLoadGL();
 
@@ -117,7 +108,7 @@ int main() {
 	GameObject trees(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "bob");
 	trees.createModel("../../../Resources/Model/trees/scene.gltf");
 	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "bob");
-	ground.createModel("../../../Resources/Model/ground/scene.gltf");
+	ground.createModel("../../../Resources/Model/ground/scene.gltf" );
 	sceneManager.addGameObject(ground);
 	sceneManager.addGameObject(trees);
 
@@ -148,6 +139,10 @@ int main() {
 	unsigned int counter = 0;
 
 	bool isfirstFrame = true;
+
+	Console console;
+	console.init();
+	console.addCommand("test", mySillyFunction);
 
 	while (!glfwWindowShouldClose(window)) {
 
@@ -184,7 +179,9 @@ int main() {
 
 
 		// Normal Render Loop
-		camera.Inputs(window);
+		if (console.mode == console.MODE_TOGGLE) {
+			camera.Inputs(window);
+		}
 
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 		lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
@@ -194,6 +191,20 @@ int main() {
 		sceneManager.renderCurrentScene(shaderProgram, camera);
 		skybox.Render(camera, width, height);
 		
+		// Init imgui
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+
+		console.renderConsole(window, 400, 500, camera, sceneManager);
+
+
+		//Imgui render
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		//swap :)
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
@@ -210,4 +221,3 @@ int main() {
 	shadowCubeMapProgram.Delete();
 	return 0;
 }
-
