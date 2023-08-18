@@ -16,7 +16,7 @@ void tokenize(std::string const& str, const char delim,
 
 // Default Commands:
 
-void helpCommand(std::vector<std::string> args, Camera& camera, SceneManager& sceneManager, Console& console) {
+void helpCommand(std::vector<std::string> &args, Camera& camera, SceneManager& sceneManager, Console& console) {
     console.addConsoleLog("Current registered Commands are:\n");
     for (const auto& command : console.commands) {
         std::string out = "--" + command.first + "\n";
@@ -24,10 +24,29 @@ void helpCommand(std::vector<std::string> args, Camera& camera, SceneManager& sc
     }
 }
 
+void togglePhysicsCommand(std::vector<std::string>& args, Camera& camera, SceneManager& sceneManager, Console& console) {
+    if (sceneManager.doPhysics) {
+        sceneManager.doPhysics = false;
+        console.addConsoleLog("Toggled Physics to FALSE");
+    } else if (!sceneManager.doPhysics) {
+        sceneManager.doPhysics = true;
+        console.addConsoleLog("Toggled Physics to TRUE");
+    }
+    
+}
+
+void listCommand(std::vector<std::string>& args, Camera& camera, SceneManager& sceneManager, Console& console) {
+    console.addConsoleLog("Current Game Objects in the scene:\n");
+    Scene scene = sceneManager.getCurrentScene();
+    for (auto gameObject : scene.gameObjects) {
+        std::string out = "--" + gameObject.second.name + "\n";
+        console.addConsoleLog(out.c_str());
+    }
+}
 
 
 
-void Console::addCommand(std::string name, std::function<void(std::vector<std::string> args, Camera& camera, SceneManager& sceneManager, Console &console)> mFunction)
+void Console::addCommand(std::string name, std::function<void(std::vector<std::string> &args, Camera& camera, SceneManager& sceneManager, Console &console)> mFunction)
 {
     commands.emplace(name, mFunction);
 }
@@ -37,7 +56,7 @@ void Console::deleteCommand(std::string name)
     commands.erase(name);
 }
 
-bool Console::executeCommand(std::string name, std::vector<std::string> args, Camera& camera, SceneManager& sceneManager)
+bool Console::executeCommand(std::string name, std::vector<std::string> &args, Camera& camera, SceneManager& sceneManager)
 {
     if (commands.find(name) != commands.end()) {
         commands.at(name)(args, camera, sceneManager, *this); // run the function
@@ -55,6 +74,7 @@ void Console::init()
 {
     // Now We load the default commands
     addCommand("help", helpCommand);
+    addCommand("list", listCommand);
 }
 
 void Console::addConsoleLog(const char* data)
@@ -78,7 +98,7 @@ void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& c
         ImGui::TextUnformatted(Console::buf.begin());
         ImGui::PushID(340);
         const char* d = "";
-        ImGui::SetCursorPosY(height - 30);
+        ImGui::SetCursorPosY(height - 30.0);
         ImGui::InputText(d, &commandBuffer);
         ImGui::PopID();
         ImGui::SameLine();

@@ -23,7 +23,14 @@ void Model::Draw(Shader& shader, Camera& camera, glm::vec3 position, glm::quat r
 	// Go over all meshes and draw each one
 	for (unsigned int i = 0; i < meshes.size(); i++)
 	{
-		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[i]);
+		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[i], position, rotation, scale);
+	}
+}
+
+void Model::Delete()
+{
+	for (Mesh mesh : meshes) {
+		mesh.Delete();
 	}
 }
 

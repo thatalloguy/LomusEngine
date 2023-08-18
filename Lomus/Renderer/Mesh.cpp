@@ -68,6 +68,7 @@ void Mesh::Draw
 	glm::mat4 sca = glm::mat4(1.0f);
 
 	// Transform the matrices to their correct form
+	translation.y = -translation.y;
 	trans = glm::translate(trans, translation);
 	rot = glm::mat4_cast(rotation);
 	sca = glm::scale(sca, scale);
@@ -80,4 +81,10 @@ void Mesh::Draw
 
 	// Draw the actual mesh
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+}
+
+void Mesh::Delete()
+{
+	VAO.Delete();
+	
 }

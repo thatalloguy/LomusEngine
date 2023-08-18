@@ -105,12 +105,12 @@ int main() {
 	sceneManager.createNewScene("mainScene");
 	sceneManager.setCurrentScene("mainScene");
 
-	GameObject trees(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "bob");
-	trees.createModel("../../../Resources/Model/trees/scene.gltf");
+	GameObject trees(glm::vec3(5.0f, 10.0f, 5.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "kenku");
+	trees.createModel("../../../Resources/Model/monkey/scene.gltf");
 	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "bob");
 	ground.createModel("../../../Resources/Model/ground/scene.gltf" );
-	sceneManager.addGameObject(ground);
-	sceneManager.addGameObject(trees);
+	sceneManager.addGameObject(ground, 0);
+	sceneManager.addGameObject(trees, 1);
 
 
 	LightManager lightManager;
@@ -144,6 +144,12 @@ int main() {
 	console.init();
 	console.addCommand("test", mySillyFunction);
 
+	sceneManager.doPhysics = false;
+	//Physics
+	sceneManager.createRigidBody(1, BodyType::DYNAMIC);
+	Transform transform;
+	sceneManager.addCollisionBoxShape(1, Vector3(1, 1, 1), transform);
+
 	while (!glfwWindowShouldClose(window)) {
 
 		// Error checking
@@ -168,7 +174,10 @@ int main() {
 
 
 		}
-
+		if (sceneManager.doPhysics) {
+			sceneManager.UpdatePhysicsWorld(timeDiff);
+		}
+		
 
 		cubeShadow.RenderPhaseBegin(shadowMapWidth, shadowMapHeight);
 

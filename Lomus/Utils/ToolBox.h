@@ -5,6 +5,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <math.h>
+#include <reactPhysics3d/reactphysics3d.h>
 
 glm::vec3 convertToVec3(glm::quat quat) {
 	glm::vec3 value;

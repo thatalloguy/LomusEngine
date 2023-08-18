@@ -19,9 +19,15 @@ void GameObject::createModel(const char* path)
 
 void GameObject::Draw(Shader& defaultShader, Camera& camera)
 {
-	model.Draw(defaultShader, camera, GameObject::position, GameObject::rotation, GameObject::scale);
+	model.Draw(defaultShader, camera, position, rotation, scale);
 }
 
 void GameObject::Delete()
 {
+}
+
+void GameObject::DeletePhysicsData(PhysicsCommon& common)
+{
+	
+
 }

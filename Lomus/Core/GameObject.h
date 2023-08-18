@@ -2,8 +2,10 @@
 #include "../Renderer/Model.h"
 #include <glm/glm.hpp>
 #include <string>
+#include <reactphysics3d/reactphysics3d.h>
 
 using namespace std;
+using namespace reactphysics3d;
 
 class GameObject
 {
@@ -25,6 +27,19 @@ public:
 	void Draw(Shader& defaultShader, Camera& camera);
 
 	void Delete();
+	void DeletePhysicsData(PhysicsCommon& common);
+
+
+	//Physics stuff
+	RigidBody* mRigidBody;
+	Transform transform = Transform();
+	Vector3 Pvec3 = Vector3(1, 1, 1);
+	Quaternion Pquat = Quaternion(1, 1, 1, 1);
+	
+	//Shapes
+	std::vector<Collider*> colliders;
+	bool isPhysical = false;
+
 private:
 	//Components
 	Model model;

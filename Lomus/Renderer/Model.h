@@ -14,7 +14,8 @@ public:
 	void load(const char* file);
 	Model();
 	void Draw(Shader& shader, Camera& camera, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
-
+	void Delete();
+	std::vector<Mesh> meshes;
 private:
 	// Variables for easy access
 	const char* file;
@@ -22,7 +23,7 @@ private:
 	json JSON;
 
 	// All the meshes and transformations
-	std::vector<Mesh> meshes;
+	
 	std::vector<glm::vec3> translationsMeshes;
 	std::vector<glm::quat> rotationsMeshes;
 	std::vector<glm::vec3> scalesMeshes;

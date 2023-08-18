@@ -18,9 +18,9 @@ public:
     int MODE_WINDOW = 1;
     bool hideConsole = false;
     // Core
-    void addCommand(std::string name, std::function<void(std::vector<std::string> args,Camera& camera, SceneManager &sceneManager, Console& console)> mFunction);
+    void addCommand(std::string name, std::function<void(std::vector<std::string> &args,Camera& camera, SceneManager &sceneManager, Console& console)> mFunction);
     void deleteCommand(std::string name);
-    bool executeCommand(std::string name, std::vector<std::string> args, Camera& camera, SceneManager& sceneManager);
+    bool executeCommand(std::string name, std::vector<std::string> &args, Camera& camera, SceneManager& sceneManager);
 
     // Visual Console
     void init(); //This is for loading the engine's own commands
@@ -31,7 +31,7 @@ public:
     
     int mode = Console::MODE_WINDOW;
     ImGuiTextBuffer buf;
-    std::unordered_map<std::string, std::function<void(std::vector<std::string> args, Camera& camera, SceneManager& sceneManager, Console& console)>> commands;
+    std::unordered_map<std::string, std::function<void(std::vector<std::string> &args, Camera& camera, SceneManager& sceneManager, Console& console)>> commands;
 
 private:
     
