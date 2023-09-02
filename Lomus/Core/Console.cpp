@@ -39,7 +39,8 @@ void listCommand(std::vector<std::string>& args, Camera& camera, SceneManager& s
     console.addConsoleLog("Current Game Objects in the scene:\n");
     Scene scene = sceneManager.getCurrentScene();
     for (auto gameObject : scene.gameObjects) {
-        std::string out = "--" + gameObject.second.name + "\n";
+        std::string ids = +" | ID: " + to_string(gameObject.first);
+        std::string out = "--" + gameObject.second.name + ids + "\n";
         console.addConsoleLog(out.c_str());
     }
 }
@@ -75,6 +76,7 @@ void Console::init()
     // Now We load the default commands
     addCommand("help", helpCommand);
     addCommand("list", listCommand);
+    addCommand("togglePhysics", togglePhysicsCommand);
 }
 
 void Console::addConsoleLog(const char* data)

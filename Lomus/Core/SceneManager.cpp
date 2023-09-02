@@ -1,5 +1,14 @@
 #include "SceneManager.h"
 
+SceneManager::SceneManager() {
+
+}
+
+SceneManager::~SceneManager()
+{
+	Delete();
+}
+
 void SceneManager::createNewScene(std::string name)
 {
 	Scene newScene;
@@ -44,6 +53,7 @@ void SceneManager::renderCurrentScene(Shader& shader, Camera& camera)
 	}
 }
 
+
 void SceneManager::Delete()
 {
 	std::unordered_map<std::string, Scene>::iterator it = scenes.begin();
@@ -60,6 +70,8 @@ void SceneManager::Delete()
 
 }
 
+
+
 void SceneManager::createRigidBody(int GameObjectId, BodyType type)
 {
 	GameObject& currentGameObject = SceneManager::getGameobject(GameObjectId);
@@ -72,11 +84,9 @@ void SceneManager::createRigidBody(int GameObjectId, BodyType type)
 	currentGameObject.Pquat.z = currentGameObject.rotation.z;
 	currentGameObject.Pquat.w = currentGameObject.rotation.w;
 	std::cout << "DIDNT BREAK YET5 \n";
-	currentGameObject.transform.setPosition(currentGameObject.Pvec3);
-	std::cout << "DIDNT BREAK YET3 \n";
-	currentGameObject.transform.setOrientation(currentGameObject.Pquat);
+	currentGameObject.transform = Transform(currentGameObject.Pvec3, currentGameObject.Pquat);
 	std::cout << "DIDNT BREAK YET6 \n";
-	currentGameObject.mRigidBody = getCurrentScene().world->createRigidBody(currentGameObject.transform);
+	currentGameObject.mRigidBody = currentScene.world->createRigidBody(currentGameObject.transform);
 	std::cout << "DIDNT BREAK YET7 \n";
 	currentGameObject.mRigidBody->setType(type);
 	std::cout << "DIDNT BREAK YET8 \n";
@@ -86,13 +96,12 @@ void SceneManager::createRigidBody(int GameObjectId, BodyType type)
 
 void SceneManager::addCollisionBoxShape(int GameObjectId, Vector3& halfExtents, Transform& Offset)
 {
-	std::cout << "DIDNT BREAK YET1 \n";
 	GameObject& currentGameObject = SceneManager::getGameobject(GameObjectId);
-	std::cout << "DIDNT BREAK YET2 \n";
+	
 	Collider* collider = currentGameObject.mRigidBody->addCollider(common.createBoxShape(halfExtents), Offset);
-	std::cout << "DIDNT BREAK YET \n";
+	
 	currentGameObject.colliders.push_back(collider);
-	std::cout << "DIDNT BREAK YET \n";
+
 }
 
 void SceneManager::UpdatePhysicsWorld(float timeStamp)
@@ -107,3 +116,4 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp)
 		}
 	}
 }
+

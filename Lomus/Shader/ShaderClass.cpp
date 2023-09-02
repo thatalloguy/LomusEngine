@@ -118,11 +118,42 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile, const char* geo
 	glDeleteShader(geometryShader);
 }
 
+void Shader::setIntUniform(const char* name, int value)
+{
+	glUniform1i(glGetUniformLocation(ID, name), value);
+}
+
+void Shader::setVec3Uniform(const char* name, float x, float y, float z)
+{
+	glUniform3f(glGetUniformLocation(ID, name), x, y, z);
+}
+
+void Shader::setVec4Uniform(const char* name, float x, float y, float z, float w)
+{
+	glUniform4f(glGetUniformLocation(ID, name), x, y, z, w);
+}
+
+void Shader::setMatrixUniform(const char* name, glm::mat4 matrix)
+{
+	glUniformMatrix4fv(glGetUniformLocation(ID, name), 1, GL_FALSE, glm::value_ptr(matrix));
+}
+
+GLuint Shader::getUniformLocation(const char* name)
+{
+	return glGetUniformLocation(ID, name);
+}
+
 // Activates the Shader Program
 void Shader::Activate()
 {
 	glUseProgram(ID);
 }
+
+void Shader::Deactivate()
+{
+	glUseProgram(0);
+}
+
 
 // Deletes the Shader Program
 void Shader::Delete()

@@ -26,11 +26,13 @@
 #include "Lomus/Core/Console.h"
 #include "Lomus/Shader/ShaderClass.h"
 
+#include "Lomus/Physics/DebugRenderer.h"
+#include "Lomus/Physics/DebugVAO.h"
+
 //Imgui
 #include "Thirdparty/imgui/imgui.h"
 #include "Thirdparty/imgui/imgui_impl_glfw.h"
-#include "Thirdparty/imgui/imgui_impl_opengl3.h" 
-
+#include "Thirdparty/imgui/imgui_impl_opengl3.h"
 const unsigned int width = 1280;
 const unsigned int height = 720;
 
@@ -150,6 +152,8 @@ int main() {
 	Transform transform;
 	sceneManager.addCollisionBoxShape(1, Vector3(1, 1, 1), transform);
 
+	Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene().world);
+
 	while (!glfwWindowShouldClose(window)) {
 
 		// Error checking
@@ -198,6 +202,11 @@ int main() {
 		cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
 		
 		sceneManager.renderCurrentScene(shaderProgram, camera);
+
+		// AFTER 84 FUCKING YEARS HERE IT GODDAMN FINALLY IS:
+		lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera);
+
+
 		skybox.Render(camera, width, height);
 		
 		// Init imgui
@@ -228,5 +237,35 @@ int main() {
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	shadowCubeMapProgram.Delete();
+	return 0;
+}
+
+int main2() {
+	PhysicsCommon physicsCommon;
+
+	// Create a physics world
+	PhysicsWorld* world = physicsCommon.createPhysicsWorld();
+
+	// Create a rigid body in the world
+	Vector3 position(0, 20, 0);
+	Quaternion orientation = Quaternion::identity();
+	Transform transform(position, orientation);
+	RigidBody* body = world->createRigidBody(transform);
+
+	const decimal timeStep = 1.0f / 60.0f;
+
+	// Step the simulation a few steps
+	for (int i = 0; i < 20; i++) {
+
+		world->update(timeStep);
+
+		// Get the updated position of the body
+		const Transform& transform = body->getTransform();
+		const Vector3& position = transform.getPosition();
+
+		// Display the position of the body
+		std::cout << "Body Position: (" << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
+	}
+
 	return 0;
 }

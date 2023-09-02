@@ -34,7 +34,7 @@ public:
 	RigidBody* mRigidBody;
 	Transform transform = Transform();
 	Vector3 Pvec3 = Vector3(1, 1, 1);
-	Quaternion Pquat = Quaternion(1, 1, 1, 1);
+	Quaternion Pquat = Quaternion::identity();
 	
 	//Shapes
 	std::vector<Collider*> colliders;

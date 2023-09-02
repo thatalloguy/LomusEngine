@@ -7,6 +7,11 @@
 #include<sstream>
 #include<iostream>
 #include<cerrno>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/vector_angle.hpp>
 
 std::string get_file_contents(const char* filename);
 
@@ -19,8 +24,17 @@ public:
 	Shader(const char* vertexFile, const char* fragmentFile);
 	Shader(const char* vertexFile, const char* fragmentFile, const char* geometryFile);
 
+	void setIntUniform(const char* name, int value);
+	
+	void setVec3Uniform(const char* name, float x, float y, float z);
+	void setVec4Uniform(const char* name, float x, float y, float z, float w);
+	void setMatrixUniform(const char* name, glm::mat4 matrix);
+
+	GLuint getUniformLocation(const char* name);
+
 	// Activates the Shader Program
 	void Activate();
+	void Deactivate();
 	// Deletes the Shader Program
 	void Delete();
 private:

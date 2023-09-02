@@ -1,4 +1,6 @@
 #pragma once
+
+#include "../Physics/DebugRenderer.h"
 #include "GameObject.h"
 #include <vector>
 #include <unordered_map>
@@ -13,6 +15,8 @@ struct Scene {
 class SceneManager
 {
 public:
+	SceneManager();
+	~SceneManager();
 	void createNewScene(std::string name);
 	void addGameObject(GameObject& gameObject, int id);
 	void setCurrentScene(std::string name);
@@ -32,10 +36,13 @@ public:
 	//void addCollisionBoxShape(std::string& GameObjectName, float radius, float height, Transform Offset);
 
 	PhysicsCommon common;
-	//PhysicsHandler physics;
 	bool doPhysics = true;
+
+	
+
 private:
 	unordered_map<string, Scene> scenes;
 	Scene currentScene;
 	bool isItFirstScene = true;
+
 };
