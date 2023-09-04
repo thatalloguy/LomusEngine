@@ -1,10 +1,8 @@
 // Other libraries 
 #include <iostream>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/vector_relational.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <stdio.h>
 
@@ -52,6 +50,7 @@ void mySillyFunction(std::vector<std::string> args, Camera& camera, SceneManager
 }
 
 
+
 int main() {
 	
 
@@ -91,8 +90,8 @@ int main() {
 
 	//Camera and init of shaders
 
-	Shader shaderProgram("../../../Lomus/Shader/shaders/default.vert", "../../../Lomus/Shader/shaders/default.frag");
-	Shader shadowCubeMapProgram("../../../Lomus/Shader/shaders/shadowCubeMap.vert", "../../../Lomus/Shader/shaders/shadowCubeMap.frag", "../../../Lomus/Shader/shaders/shadowCubeMap.geom");
+	Shader shaderProgram("../../Lomus/Shader/shaders/default.vert", "../../Lomus/Shader/shaders/default.frag");
+	Shader shadowCubeMapProgram("../../Lomus/Shader/shaders/shadowCubeMap.vert", "../../Lomus/Shader/shaders/shadowCubeMap.frag", "../../Lomus/Shader/shaders/shadowCubeMap.geom");
 
 
 	shaderProgram.Activate();
@@ -107,11 +106,11 @@ int main() {
 	sceneManager.createNewScene("mainScene");
 	sceneManager.setCurrentScene("mainScene");
 
-	GameObject trees(glm::vec3(5.0f, 10.0f, 5.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "kenku");
-	trees.createModel("../../../Resources/Model/monkey/scene.gltf");
+	GameObject trees(glm::vec3(5.0f, 12.0f, 5.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "kenku");
+	trees.createModel("../../Resources/Model/monkey/scene.gltf");
 	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "bob");
-	ground.createModel("../../../Resources/Model/ground/scene.gltf" );
-	sceneManager.addGameObject(ground, 0);
+	ground.createModel("../../Resources/Model/ground/scene.gltf" );
+	sceneManager.addGameObject(ground, 2);
 	sceneManager.addGameObject(trees, 1);
 
 
@@ -148,9 +147,14 @@ int main() {
 
 	sceneManager.doPhysics = false;
 	//Physics
-	sceneManager.createRigidBody(1, BodyType::DYNAMIC);
+	sceneManager.createRigidBody(1, BodyType::DYNAMIC); // MONKEY
+	sceneManager.createRigidBody(2, BodyType::STATIC); // Ground
 	Transform transform;
-	sceneManager.addCollisionBoxShape(1, Vector3(1, 1, 1), transform);
+	Transform ntransform;
+    reactphysics3d::Vector3 he = reactphysics3d::Vector3(1, 1, 1);
+    reactphysics3d::Vector3 floorShape = reactphysics3d::Vector3(30, 1, 30);
+	sceneManager.addCollisionBoxShape(1, he, transform);
+	sceneManager.addCollisionBoxShape(2, floorShape, ntransform);
 
 	Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene().world);
 
@@ -161,7 +165,7 @@ int main() {
 		if ((err = glGetError()) != GL_NO_ERROR)
 		{
 			
-			std::cout << "Error: " << err << " \n";
+			std::cerr << "Error: " << err << " \n";
 			//return -1; -- disabled so it wont crash everytime i get error :(
 		}
 
@@ -234,6 +238,7 @@ int main() {
 	shaderProgram.Delete();
 	shadowCubeMapProgram.Delete();
 	sceneManager.Delete();
+    lDebugRenderer.Delete();
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	shadowCubeMapProgram.Delete();

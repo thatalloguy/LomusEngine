@@ -11,7 +11,7 @@ void main() {
 	if (useGlobalVertexColor) {
 		color = globalVertexColor;
 	} else {
-		color = vertexColorOut;
+		color = vec4(0, 1, 0, 1);
 	}
 	
 }

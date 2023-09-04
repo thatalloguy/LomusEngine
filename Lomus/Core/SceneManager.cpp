@@ -42,8 +42,16 @@ Scene& SceneManager::getCurrentScene()
 
 GameObject& SceneManager::getGameobject(int id)
 {
-	GameObject& go = currentScene.gameObjects.at(id);
-	return go;
+    try {
+        GameObject& go = currentScene.gameObjects.at(id);
+        return go;
+    } catch(int i) {
+        std::cerr << "couldnt find game object: " << id << "\n";
+    }
+
+
+
+
 }
 
 void SceneManager::renderCurrentScene(Shader& shader, Camera& camera)
@@ -83,13 +91,9 @@ void SceneManager::createRigidBody(int GameObjectId, BodyType type)
 	currentGameObject.Pquat.y = currentGameObject.rotation.y;
 	currentGameObject.Pquat.z = currentGameObject.rotation.z;
 	currentGameObject.Pquat.w = currentGameObject.rotation.w;
-	std::cout << "DIDNT BREAK YET5 \n";
 	currentGameObject.transform = Transform(currentGameObject.Pvec3, currentGameObject.Pquat);
-	std::cout << "DIDNT BREAK YET6 \n";
 	currentGameObject.mRigidBody = currentScene.world->createRigidBody(currentGameObject.transform);
-	std::cout << "DIDNT BREAK YET7 \n";
 	currentGameObject.mRigidBody->setType(type);
-	std::cout << "DIDNT BREAK YET8 \n";
 	currentGameObject.isPhysical = true;
 	
 }
@@ -97,11 +101,8 @@ void SceneManager::createRigidBody(int GameObjectId, BodyType type)
 void SceneManager::addCollisionBoxShape(int GameObjectId, Vector3& halfExtents, Transform& Offset)
 {
 	GameObject& currentGameObject = SceneManager::getGameobject(GameObjectId);
-	
 	Collider* collider = currentGameObject.mRigidBody->addCollider(common.createBoxShape(halfExtents), Offset);
-	
 	currentGameObject.colliders.push_back(collider);
-
 }
 
 void SceneManager::UpdatePhysicsWorld(float timeStamp)
@@ -113,6 +114,11 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp)
 			gameObject.second.position.x = gameObject.second.mRigidBody->getTransform().getPosition().x;
 			gameObject.second.position.y = gameObject.second.mRigidBody->getTransform().getPosition().y;
 			gameObject.second.position.z = gameObject.second.mRigidBody->getTransform().getPosition().z;
+
+            gameObject.second.rotation.x = gameObject.second.mRigidBody->getTransform().getOrientation().x;
+            gameObject.second.rotation.y = gameObject.second.mRigidBody->getTransform().getOrientation().y;
+            gameObject.second.rotation.z = gameObject.second.mRigidBody->getTransform().getOrientation().z;
+            gameObject.second.rotation.w = gameObject.second.mRigidBody->getTransform().getOrientation().w;
 		}
 	}
 }

@@ -1,8 +1,8 @@
 #pragma once
-#include <glad/glad.h>
+
 #include <vector>
 #include <glm/glm.hpp>
-
+#include <glad/glad.h>
 
 struct Vertex
 {
@@ -18,7 +18,9 @@ class VBO
 public:
 	GLuint ID;
 	VBO(std::vector<Vertex>& vertices);
-	
+    VBO();
+
+    void uploadDataToVbo(std::vector<Vertex>& vertices);
 	void Bind();
 	void Unbind();
 	void Delete();

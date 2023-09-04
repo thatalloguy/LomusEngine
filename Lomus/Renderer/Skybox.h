@@ -26,7 +26,7 @@ private:
 	unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
 	unsigned int cubemapTexture;
 
-	std::string path = "../../../Lomus/Shader/shaders/Resources/Skyboxes/default/";
+	std::string path = "../../Lomus/Shader/shaders/Resources/Skyboxes/default/";
 	std::string facesCubeMap[6] = {
 		path + "right.png",
 		path + "left.png",
@@ -38,7 +38,7 @@ private:
 
 	//Shaderss
 
-	Shader skyboxShader = Shader("../../../Lomus/Shader/shaders/skybox.vert", "../../../Lomus/Shader/shaders/skybox.frag");
+	Shader skyboxShader = Shader("../../Lomus/Shader/shaders/skybox.vert", "../../Lomus/Shader/shaders/skybox.frag");
 
 };
 

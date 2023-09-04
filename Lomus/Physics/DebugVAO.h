@@ -1,7 +1,9 @@
 #pragma once
-#include <glad/glad.h>
+
+
 #include <cassert>
 #include <iostream>
+#include <glad/glad.h>
 
 class DebugVAO {
 public:

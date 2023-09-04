@@ -8,6 +8,7 @@ public:
 	GLuint ID;
 	EBO(std::vector<GLuint>& indices);
 
+    void uploadToEBO(std::vector<GLuint>& indices);
 	void Bind();
 	void Unbind();
 	void Delete();
