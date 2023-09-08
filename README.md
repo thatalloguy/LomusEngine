@@ -15,3 +15,4 @@ When programming new features I always think how it will interact with the rest 
 
 ![engine2](https://github.com/thatalloguy/LomusEngine/assets/51132972/2fb16eff-d867-4da2-a6e8-99ca805c29e8)
 
+All of the source code inside of Lomus belongs to me >:)
