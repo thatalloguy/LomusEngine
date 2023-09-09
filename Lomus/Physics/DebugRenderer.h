@@ -2,12 +2,12 @@
 
 #include "../Shader/ShaderClass.h"
 #include "../Renderer/Camera.h"
+#include "../Core/SceneManager.h"
 #include "DebugVAO.h"
 #include "DebugVBO.h"
 
 #include <reactphysics3d/reactphysics3d.h>
 #include <iostream>
-
 
 using namespace reactphysics3d;
 
@@ -49,17 +49,25 @@ namespace Lomus {
 
 
             updateBuffers(world);
-            oldNbTriangles = world->getDebugRenderer().getNbTriangles();
+
         };
 
-		void Render(PhysicsWorld* world, Camera& camera) {
+		void Render(PhysicsWorld* world, Camera& camera, bool update) {
+
 
 			reactphysics3d::DebugRenderer& debugRenderer = world->getDebugRenderer();
 			debugRenderer.computeDebugRenderingPrimitives(*world);
 
-            if (oldNbTriangles != debugRenderer.getNbTriangles()) {
+
+            if (update) {
                 updateBuffers(world);
+            } else if (isfirst) {
+                updateBuffers(world);
+                isfirst = false;
             }
+
+
+
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -104,6 +112,7 @@ namespace Lomus {
 			debugShader.Deactivate();
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 		};
 
 		void Delete() {
@@ -125,14 +134,11 @@ namespace Lomus {
 
 			if (nbTriangles > 0) {
 				mDebugTrianglesVBO.bind();
-				const rp3d::DebugRenderer::DebugTriangle* triangle = debugRenderer.getTrianglesArray();
-				// Convert triangle Array to normal array
-
-                //testDebug(glm::vec3(5.0f, 10.0f, 5.0f), glm::vec3(1, 1, 1));
-
 
                 rp3d::Array<rp3d::DebugRenderer::DebugTriangle> rawTriangles = debugRenderer.getTriangles();
-				
+
+
+
                 newVertices.clear();
 				for (int i = 0; i < nbTriangles; i++) {
 
@@ -142,9 +148,10 @@ namespace Lomus {
 				}
 
 
-				GLsizei sizeVertices = static_cast<GLsizei>(nbTriangles * sizeof(Lomus::debugVertex));
 				mDebugTrianglesVBO.copyDataIntoVBO(newVertices.size() * sizeof(Lomus::debugVertex), newVertices.data(), GL_DYNAMIC_DRAW);
 				mDebugTrianglesVBO.unbind();
+                std::cout << "SIZE: " << newVertices.size() << "\n";
+                std::cout << "triangle Count: " << nbTriangles << "\n";
 
 			}
 
@@ -158,8 +165,8 @@ namespace Lomus {
 
 
         std::vector<Lomus::debugVertex> newVertices;
-
-        uint oldNbTriangles;
+        uint oldNbTriangles = 0;
+        bool isfirst = true;
 
 		Shader debugShader{ "../../Lomus/Shader/shaders/debug.vert", "../../Lomus/Shader/shaders/debug.frag" };
 	};
