@@ -150,10 +150,16 @@ int main() {
 	sceneManager.createRigidBody(1, BodyType::DYNAMIC); // MONKEY
 	sceneManager.createRigidBody(2, BodyType::STATIC); // Ground
 	Transform transform;
+	Transform extratransform;
+
+    extratransform.setPosition(Vector3(0, -2, 0));
+
+
 	Transform ntransform;
     reactphysics3d::Vector3 he = reactphysics3d::Vector3(1, 1, 1);
     reactphysics3d::Vector3 floorShape = reactphysics3d::Vector3(30, 1, 30);
-	sceneManager.addCollisionBoxShape(1, he, transform);
+	sceneManager.addCollisionSphereShape(1, 1, transform);
+    sceneManager.addCollisionBoxShape(1, he, extratransform);
 	sceneManager.addCollisionBoxShape(2, floorShape, ntransform);
 
 	Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene().world);
@@ -208,7 +214,7 @@ int main() {
 		sceneManager.renderCurrentScene(shaderProgram, camera);
 
 		// AFTER 84 FUCKING YEARS HERE IT GODDAMN FINALLY IS:
-		lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera);
+		lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
 
 
 		skybox.Render(camera, width, height);
