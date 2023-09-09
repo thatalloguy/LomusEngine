@@ -116,15 +116,23 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp)
 	for (auto& gameObject : currentScene.gameObjects) {
 		
 		if (gameObject.second.isPhysical) {
-            gameObject.second.Pquat.inverse();
+
 			gameObject.second.position.x = gameObject.second.mRigidBody->getTransform().getPosition().x;
 			gameObject.second.position.y = gameObject.second.mRigidBody->getTransform().getPosition().y;
 			gameObject.second.position.z = gameObject.second.mRigidBody->getTransform().getPosition().z;
 
-            gameObject.second.rotation.x = gameObject.second.mRigidBody->getTransform().getOrientation().x;
-            gameObject.second.rotation.y = gameObject.second.mRigidBody->getTransform().getOrientation().y;
-            gameObject.second.rotation.z = gameObject.second.mRigidBody->getTransform().getOrientation().z;
-            gameObject.second.rotation.w = gameObject.second.mRigidBody->getTransform().getOrientation().w;
+            tempQuat.x = gameObject.second.mRigidBody->getTransform().getOrientation().x;
+            tempQuat.y = gameObject.second.mRigidBody->getTransform().getOrientation().y;
+            tempQuat.z = gameObject.second.mRigidBody->getTransform().getOrientation().z;
+            tempQuat.w = gameObject.second.mRigidBody->getTransform().getOrientation().w;
+
+            tempQuat.inverse();
+
+            gameObject.second.rotation.x = tempQuat.x;
+            gameObject.second.rotation.y = tempQuat.y;
+            gameObject.second.rotation.z = tempQuat.z;
+            gameObject.second.rotation.w = tempQuat.w;
+
 		}
 	}
 }

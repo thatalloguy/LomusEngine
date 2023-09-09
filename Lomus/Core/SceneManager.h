@@ -44,5 +44,5 @@ private:
 	unordered_map<string, Scene> scenes;
 	Scene currentScene;
 	bool isItFirstScene = true;
-
+    Quaternion tempQuat;
 };
