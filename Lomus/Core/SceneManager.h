@@ -32,8 +32,8 @@ public:
 	void createRigidBody(int GameObjectId, BodyType type);
 	void addCollisionBoxShape(int GameObjectId, Vector3& halfExtents, Transform& Offset);
 	void UpdatePhysicsWorld(float timeStamp);
-	//void addCollisionSphereShape(std::string& GameObjectName, float radius, Transform Offset);
-	//void addCollisionBoxShape(std::string& GameObjectName, float radius, float height, Transform Offset);
+	void addCollisionSphereShape(int GameObjectId, float radius, Transform& Offset);
+	//void addCollisionCapsuleShape(std::string& GameObjectName, float radius, float height, Transform Offset);
 
 	PhysicsCommon common;
 	bool doPhysics = true;

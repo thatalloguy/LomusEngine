@@ -104,6 +104,11 @@ void SceneManager::addCollisionBoxShape(int GameObjectId, Vector3& halfExtents, 
 	Collider* collider = currentGameObject.mRigidBody->addCollider(common.createBoxShape(halfExtents), Offset);
 	currentGameObject.colliders.push_back(collider);
 }
+void SceneManager::addCollisionSphereShape(int GameObjectId, float radius, Transform& Offset) {
+    GameObject& currentGameObject = SceneManager::getGameobject(GameObjectId);
+    Collider* collider = currentGameObject.mRigidBody->addCollider(common.createSphereShape(radius), Offset);
+    currentGameObject.colliders.push_back(collider);
+}
 
 void SceneManager::UpdatePhysicsWorld(float timeStamp)
 {
@@ -111,6 +116,7 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp)
 	for (auto& gameObject : currentScene.gameObjects) {
 		
 		if (gameObject.second.isPhysical) {
+            gameObject.second.Pquat.inverse();
 			gameObject.second.position.x = gameObject.second.mRigidBody->getTransform().getPosition().x;
 			gameObject.second.position.y = gameObject.second.mRigidBody->getTransform().getPosition().y;
 			gameObject.second.position.z = gameObject.second.mRigidBody->getTransform().getPosition().z;
