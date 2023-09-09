@@ -12,5 +12,5 @@ This is a passion project made by only 1 person so progress is slow 😭
 When developing the key thing that I keep in mind: workflow.
 When programming new features I always think how it will interact with the rest of the codebase.
 
-
+__________________________________________________________
 All of the source code inside of Lomus belongs to me >:)
