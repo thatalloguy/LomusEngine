@@ -150,8 +150,6 @@ namespace Lomus {
 
 				mDebugTrianglesVBO.copyDataIntoVBO(newVertices.size() * sizeof(Lomus::debugVertex), newVertices.data(), GL_DYNAMIC_DRAW);
 				mDebugTrianglesVBO.unbind();
-                std::cout << "SIZE: " << newVertices.size() << "\n";
-                std::cout << "triangle Count: " << nbTriangles << "\n";
 
 			}
 

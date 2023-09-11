@@ -33,7 +33,7 @@ public:
 	void addCollisionBoxShape(int GameObjectId, Vector3& halfExtents, Transform& Offset);
 	void UpdatePhysicsWorld(float timeStamp);
 	void addCollisionSphereShape(int GameObjectId, float radius, Transform& Offset);
-	//void addCollisionCapsuleShape(std::string& GameObjectName, float radius, float height, Transform Offset);
+	void addCollisionCapsuleShape(int GameObjectId, float radius, float height, Transform& Offset);
 
 	PhysicsCommon common;
 	bool doPhysics = true;

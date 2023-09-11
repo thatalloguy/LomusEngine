@@ -36,6 +36,7 @@ public:
 private:
     
     std::string commandBuffer;
+    std::string prevCommand;
 
     bool togglePressed;
 

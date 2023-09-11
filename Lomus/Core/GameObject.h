@@ -1,5 +1,7 @@
 #pragma once
 #include "../Renderer/Model.h"
+#include "glm/detail/type_quat.hpp"
+#include "../Renderer/Camera.h"
 #include <glm/glm.hpp>
 #include <string>
 #include <reactphysics3d/reactphysics3d.h>
@@ -22,7 +24,8 @@ public:
 	
 	GameObject(glm::vec3 position, glm::quat rotation, glm::vec3 scale, string name);
 	
-	void createModel(const char* path);
+	void createModel(std::string const& path);
+	void createModel(std::string const& path, std::map<std::string, std::string>& textures);
 
 	void Draw(Shader& defaultShader, Camera& camera);
 
@@ -42,6 +45,7 @@ public:
 
 private:
 	//Components
+    glm::mat4 matrix{1.0f};
 	Model model;
 };
 

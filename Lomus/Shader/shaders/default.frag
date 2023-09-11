@@ -22,8 +22,8 @@ in vec4 fragPosLight;
 in vec3 fragPos;
 
 // Gets the Texture Units from the main function
-uniform sampler2D diffuse0;
-uniform sampler2D specular0;
+uniform sampler2D texture_diffuse0;
+uniform sampler2D texture_specular0;
 
 uniform sampler2D shadowMap;
 uniform samplerCube shadowCubeMap;
@@ -39,7 +39,7 @@ uniform bool isTransparent;
 uniform float farPlane;
 uniform int lightType;
 uniform vec2 fog;
-uniform float castShadow;
+uniform int castShadow;
 
 uniform int numLights;
 uniform Light lights[100]; 
@@ -129,8 +129,10 @@ vec4 pointLightB(Light light) {
 		specular = specAmount * specularLight;
 	};
     float shadow = 0;
-    shadow = ShadowCubeCalculation(fragPos, light) * castShadow;        
-	return (texture(diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(specular0, texCoord).r * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
+    if (castShadow == 1) {
+        shadow = ShadowCubeCalculation(fragPos, light) * castShadow;
+    }
+	return (texture(texture_diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(texture_specular0, texCoord).r * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
 
 
 }
@@ -167,8 +169,10 @@ float linearizeDepth(float depth)
 	return (2.0 * near * far) / (far + near - (depth * 2.0 - 1.0) * (far - near));
 }
 
-float logisticDepth(float depth, float steepness = 0.5f, float offset = 5.0f)
+float logisticDepth(float depth)
 {
+    float steepness = 0.5f;
+    float offset = 5.0f;
 	float zVal = linearizeDepth(depth);
 	return (1 / (1 + exp(-steepness * (zVal - offset))));
 }

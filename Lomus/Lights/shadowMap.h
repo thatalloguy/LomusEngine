@@ -53,6 +53,7 @@ public:
 	void Delete();
 	void updateShadowMap(float farPlane, glm::vec3 lightPos, Shader shadowCubeMapProgram, int shadowMapWidth, int shadowMapHeight);
 
+    int renderShadow;
 
 private:
 	unsigned int pointShadowMapFBO;

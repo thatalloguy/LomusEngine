@@ -1,5 +1,6 @@
 #include "Console.h"
-#include <sstream> 
+#include <sstream>
+
 
 void tokenize(std::string const& str, const char delim,
     std::vector<std::string>& out) // For spliting string 
@@ -24,13 +25,33 @@ void helpCommand(std::vector<std::string> &args, Camera& camera, SceneManager& s
     }
 }
 
+void applyForceCommand(std::vector<std::string>& args, Camera& camera, SceneManager& sceneManager, Console& console) {
+    if (args.size() == 4) {
+        try {
+            Vector3 force(stof(args[1]), stof(args[2]), stof(args[3]));
+            sceneManager.getGameobject(stoi(args[0])).mRigidBody->applyWorldForceAtCenterOfMass(force);
+            std::string out = "Applied force to Entity: " + to_string(force.x) + " | " + to_string(force.y) + " | " + to_string(force.z) + " \n";
+            console.addConsoleLog(out.c_str());
+        } catch (std::exception& e) {
+            std::string out = e.what();
+            out = "[C++ ERROR] " + out + "\n";
+            console.addConsoleLog(out.c_str());
+            console.addConsoleLog("ERROR: applyForce args are incorrect!\n");
+        }
+
+    } else {
+        console.addConsoleLog("ERROR: applyForce args are incorrect!\n");
+    }
+
+}
+
 void togglePhysicsCommand(std::vector<std::string>& args, Camera& camera, SceneManager& sceneManager, Console& console) {
     if (sceneManager.doPhysics) {
         sceneManager.doPhysics = false;
-        console.addConsoleLog("Toggled Physics to FALSE");
+        console.addConsoleLog("Toggled Physics to FALSE\n");
     } else if (!sceneManager.doPhysics) {
         sceneManager.doPhysics = true;
-        console.addConsoleLog("Toggled Physics to TRUE");
+        console.addConsoleLog("Toggled Physics to TRUE\n");
     }
     
 }
@@ -77,11 +98,13 @@ void Console::init()
     addCommand("help", helpCommand);
     addCommand("list", listCommand);
     addCommand("togglePhysics", togglePhysicsCommand);
+    addCommand("applyForce", applyForceCommand);
 }
 
 void Console::addConsoleLog(const char* data)
 {
     Console::buf.append(data);
+    std::cout << "CONSOLE LOG: " << data;
 }
 
 
@@ -106,7 +129,7 @@ void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& c
         ImGui::SameLine();
         if (ImGui::Button("Done") || glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
             if (!commandBuffer.empty()) {
-                commandBuffer;
+                prevCommand = commandBuffer;
                 std::vector<std::string> out;
                 tokenize(commandBuffer, ' ', out);
                 commandBuffer = out[0];
@@ -127,6 +150,13 @@ void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& c
         }
         else if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_RELEASE) {
             togglePressed = true;
+        }
+
+        //Play back old command
+        if (glfwGetKey(window, GLFW_KEY_UP)) {
+            commandBuffer = prevCommand;
+        } else if (glfwGetKey(window, GLFW_KEY_DOWN)) {
+            commandBuffer = "";
         }
 
     }

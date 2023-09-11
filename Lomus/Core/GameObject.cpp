@@ -11,7 +11,7 @@ GameObject::GameObject(glm::vec3 position, glm::quat rotation, glm::vec3 scale, 
 }
 
 
-void GameObject::createModel(const char* path)
+void GameObject::createModel(std::string const& path)
 {
 	model.load(path);
 }
@@ -19,7 +19,7 @@ void GameObject::createModel(const char* path)
 
 void GameObject::Draw(Shader& defaultShader, Camera& camera)
 {
-	model.Draw(defaultShader, camera, position, rotation, scale);
+	model.Draw(defaultShader, camera, matrix, position, rotation, scale);
 }
 
 void GameObject::Delete()
@@ -30,4 +30,8 @@ void GameObject::DeletePhysicsData(PhysicsCommon& common)
 {
 	
 
+}
+
+void GameObject::createModel(const string &path, map<std::string, std::string> &textures) {
+    model.load(path, textures);
 }

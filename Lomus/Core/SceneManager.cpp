@@ -110,6 +110,12 @@ void SceneManager::addCollisionSphereShape(int GameObjectId, float radius, Trans
     currentGameObject.colliders.push_back(collider);
 }
 
+void SceneManager::addCollisionCapsuleShape(int GameObjectId, float radius, float height, Transform& Offset) {
+    GameObject& currentGameObject = SceneManager::getGameobject(GameObjectId);
+    Collider* collider = currentGameObject.mRigidBody->addCollider(common.createCapsuleShape(radius, height), Offset);
+    currentGameObject.colliders.push_back(collider);
+}
+
 void SceneManager::UpdatePhysicsWorld(float timeStamp)
 {
 	currentScene.world->update(timeStamp);
