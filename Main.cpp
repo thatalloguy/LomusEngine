@@ -1,4 +1,5 @@
 // Other libraries 
+
 #include <iostream>
 
 #include <glad/glad.h>
@@ -12,8 +13,6 @@
 //Engine
 #include "Lomus/Renderer/Texture.h"
 #include "Lomus/Renderer/Camera.h"
-#include "Lomus/Renderer/Mesh.h"
-#include "Lomus/Renderer/Model.h"
 #include "Lomus/Renderer/Skybox.h"
 
 #include "Lomus/Lights/LightManager.h"
@@ -108,15 +107,18 @@ int main() {
 
 	GameObject trees(glm::vec3(5.0f, 12.0f, 5.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "kenku");
 	trees.createModel("../../Resources/Model/monkey/scene.gltf");
-	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "bob");
-	ground.createModel("../../Resources/Model/ground/scene.gltf" );
-	sceneManager.addGameObject(ground, 2);
+	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f, -0.1f, 0.1f), "bob");
+
+    ground.createModel("../../Resources/Model/newPlay/Ballpark.gltf");
+
+
+    sceneManager.addGameObject(ground, 2);
 	sceneManager.addGameObject(trees, 1);
 
 
 	LightManager lightManager;
 	lightManager.Init();
-	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(0, 50, 0), glm::vec4(0.1f, 0.1f, 0.1f, 1), 50, "light1");
+	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(150, 150, 150), glm::vec4(0.1f, 0.1f, 0.1f, 1), 150, "light1");
 	
 
 	Skybox skybox;
@@ -131,7 +133,7 @@ int main() {
 	cubeShadowMap cubeShadow;
 	glm::vec3 lightPos = glm::vec3(0, 5, 0);
 	cubeShadow.Init(shadowMapWidth, shadowMapHeight, farPlane, lightPos, shadowCubeMapProgram);
-
+    cubeShadow.renderShadow = 0; // false
 
 	//fps counter
 	double prevTime = 0.0;
@@ -158,20 +160,30 @@ int main() {
 	Transform ntransform;
     reactphysics3d::Vector3 he = reactphysics3d::Vector3(1, 1, 1);
     reactphysics3d::Vector3 floorShape = reactphysics3d::Vector3(30, 1, 30);
-	sceneManager.addCollisionSphereShape(1, 1, transform);
-    sceneManager.addCollisionBoxShape(1, he, extratransform);
+
+
+	sceneManager.addCollisionCapsuleShape(1, 1, 5, transform);
+    //sceneManager.addCollisionBoxShape(1, he, extratransform);
+
+
 	sceneManager.addCollisionBoxShape(2, floorShape, ntransform);
 
 	Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene().world);
+
+
+
+    bool showErrors = false;
+
+
 
 	while (!glfwWindowShouldClose(window)) {
 
 		// Error checking
 		GLenum err;
-		if ((err = glGetError()) != GL_NO_ERROR)
+		if ((err = glGetError()) != GL_NO_ERROR && showErrors)
 		{
 			
-			std::cerr << "Error: " << err << " \n";
+			std::cerr << "Opengl Error: " << err << " \n";
 			//return -1; -- disabled so it wont crash everytime i get error :(
 		}
 
@@ -206,14 +218,12 @@ int main() {
 			camera.Inputs(window);
 		}
 
-		camera.updateMatrix(45.0f, 0.1f, 100.0f);
+		camera.updateMatrix(45.0f, 0.1f, 1000.0f);
 		lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
 		
 		cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
 		
 		sceneManager.renderCurrentScene(shaderProgram, camera);
-
-		// AFTER 84 FUCKING YEARS HERE IT GODDAMN FINALLY IS:
 		lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
 
 
@@ -239,7 +249,9 @@ int main() {
 	}
 	
 	// Clean Up Phase
-	skybox.Delete();
+
+    //modelTest.cleanUp();
+    skybox.Delete();
 	lightManager.Delete();
 	shaderProgram.Delete();
 	shadowCubeMapProgram.Delete();
@@ -252,31 +264,10 @@ int main() {
 }
 
 int main2() {
-	PhysicsCommon physicsCommon;
+    gladLoadGL();
 
-	// Create a physics world
-	PhysicsWorld* world = physicsCommon.createPhysicsWorld();
 
-	// Create a rigid body in the world
-	Vector3 position(0, 20, 0);
-	Quaternion orientation = Quaternion::identity();
-	Transform transform(position, orientation);
-	RigidBody* body = world->createRigidBody(transform);
 
-	const decimal timeStep = 1.0f / 60.0f;
-
-	// Step the simulation a few steps
-	for (int i = 0; i < 20; i++) {
-
-		world->update(timeStep);
-
-		// Get the updated position of the body
-		const Transform& transform = body->getTransform();
-		const Vector3& position = transform.getPosition();
-
-		// Display the position of the body
-		std::cout << "Body Position: (" << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
-	}
-
+    std::cout << "DONE\n";
 	return 0;
 }
