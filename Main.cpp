@@ -94,7 +94,7 @@ int main() {
 
 
 	shaderProgram.Activate();
-	glUniform1f(glGetUniformLocation(shaderProgram.ID, "castShadow"), 0.5f);
+	glUniform1f(glGetUniformLocation(shaderProgram.ID, "castShadow"), 1);
 	glUniform1i(glGetUniformLocation(shaderProgram.ID, "lightType"), 1);
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
@@ -106,10 +106,10 @@ int main() {
 	sceneManager.setCurrentScene("mainScene");
 
 	GameObject trees(glm::vec3(5.0f, 12.0f, 5.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "kenku");
-	trees.createModel("../../Resources/Model/monkey/scene.gltf");
-	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f, -0.1f, 0.1f), "bob");
+	trees.createModel("../../Resources/Model/Monkey/scene.gltf");
+	GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.05f, -0.05f, 0.05f), "bob");
 
-    ground.createModel("../../Resources/Model/newPlay/Ballpark.gltf");
+    ground.createModel("../../Resources/Model/Sponza/sponza.gltf");
 
 
     sceneManager.addGameObject(ground, 2);
@@ -118,22 +118,25 @@ int main() {
 
 	LightManager lightManager;
 	lightManager.Init();
-	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(150, 150, 150), glm::vec4(0.1f, 0.1f, 0.1f, 1), 150, "light1");
-	
+	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(0, 500, 0), glm::vec4(0.1f, 0.1f, 0.1f, 1), 450, "light1");
+	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(-60, 8, 5.4), glm::vec4(0.1f, 0.1f, 0.1f, 1), 7, "light2");
+	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(-4.5, 8, 1.4), glm::vec4(0.1f, 0.1f, 0.1f, 1), 4, "light3");
+	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(60, 11.5, 4), glm::vec4(0.1f, 0.1f, 0.1f, 1), 7, "light4");
+
 
 	Skybox skybox;
 	skybox.Init();
 
 
 	// Shadow map
-	float farPlane = 100.0f;
-	unsigned int shadowMapWidth = 2048;
-	unsigned int shadowMapHeight = 2048;
+	float farPlane = 10000.0f;
+	unsigned int shadowMapWidth = 1024;
+	unsigned int shadowMapHeight = 1024;
 	
 	cubeShadowMap cubeShadow;
-	glm::vec3 lightPos = glm::vec3(0, 5, 0);
+	glm::vec3 lightPos = glm::vec3(0, 1000, 0);
 	cubeShadow.Init(shadowMapWidth, shadowMapHeight, farPlane, lightPos, shadowCubeMapProgram);
-    cubeShadow.renderShadow = 0; // false
+    cubeShadow.renderShadow = 1; // true
 
 	//fps counter
 	double prevTime = 0.0;
@@ -204,14 +207,13 @@ int main() {
 			sceneManager.UpdatePhysicsWorld(timeDiff);
 		}
 		
-
+        cubeShadow.updateShadowMap(10000, lightPos, shadowCubeMapProgram, 512, 512);
 		cubeShadow.RenderPhaseBegin(shadowMapWidth, shadowMapHeight);
 
 		// Draw scene for shadow map
 		sceneManager.renderCurrentScene(shadowCubeMapProgram, camera);
 		
 		cubeShadow.RenderPhaseEnd(width, height);
-
 
 		// Normal Render Loop
 		if (console.mode == console.MODE_TOGGLE) {
@@ -220,11 +222,12 @@ int main() {
 
 		camera.updateMatrix(45.0f, 0.1f, 1000.0f);
 		lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
-		
+
 		cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
 		
 		sceneManager.renderCurrentScene(shaderProgram, camera);
-		lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
+
+        ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
 
 
 		skybox.Render(camera, width, height);
