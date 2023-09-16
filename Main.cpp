@@ -119,8 +119,8 @@ int main() {
 	LightManager lightManager;
 	lightManager.Init();
 	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(0, 500, 0), glm::vec4(0.1f, 0.1f, 0.1f, 1), 450, "light1");
-	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(-60, 8, 5.4), glm::vec4(0.1f, 0.1f, 0.1f, 1), 7, "light2");
-	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(-4.5, 8, 1.4), glm::vec4(0.1f, 0.1f, 0.1f, 1), 4, "light3");
+	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(-60, 10, 5.4), glm::vec4(0.1f, 0.1f, 0.1f, 1), 7, "light2");
+	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(-4.5, 20, 1.4), glm::vec4(0.1f, 0.1f, 0.1f, 1), 4, "light3");
 	lightManager.createNewLight(sceneManager.getCurrentScene(), glm::vec3(60, 11.5, 4), glm::vec4(0.1f, 0.1f, 0.1f, 1), 7, "light4");
 
 

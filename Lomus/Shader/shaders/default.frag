@@ -20,10 +20,16 @@ in vec2 texCoord;
 
 in vec4 fragPosLight;
 in vec3 fragPos;
+in mat3 TBN;
+
+
+in vec3 TangentViewPos;
+in vec3 TangentFragPos;
 
 // Gets the Texture Units from the main function
 uniform sampler2D texture_diffuse0;
 uniform sampler2D texture_specular0;
+uniform sampler2D texture_normal0;
 
 uniform sampler2D shadowMap;
 uniform samplerCube shadowCubeMap;
@@ -94,8 +100,24 @@ float ShadowCubeCalculation(vec3 fragPos, Light light)
     // now get current linear depth as the length between the fragment and light position
     float currentDepth = length(fragToLight);
     // now test for shadows
-    float bias = 1; 
-    float shadow = currentDepth -  bias > closestDepth ? 1.0 : 0.0;
+    float shadow  = 0.0;
+    float bias    = 100;
+    float samples = 4.0;
+    float offset  = 30.7;
+    for(float x = -offset; x < offset; x += offset / (samples * 0.5))
+    {
+        for(float y = -offset; y < offset; y += offset / (samples * 0.5))
+        {
+            for(float z = -offset; z < offset; z += offset / (samples * 0.5))
+            {
+                float closestDepth = texture(shadowCubeMap, fragToLight + vec3(x, y, z)).r;
+                closestDepth *= farPlane;   // undo mapping [0;1]
+                if(currentDepth - bias > closestDepth)
+                shadow += 1.0;
+            }
+        }
+    }
+    shadow /= (samples * samples * samples);
 
     return shadow;
 }  
@@ -111,11 +133,19 @@ vec4 pointLightB(Light light) {
 	float inten = light.lightInten / (a * dist * dist + b * dist + 1.0f);
 
 	// ambient lighting
-	float ambient = 0.20f;
+	float ambient = 0.30f;
 
 	// diffuse lighting
-	vec3 normal = normalize(Normal);
-	vec3 lightDirection = normalize(lightVec);
+
+
+    //Normal maps
+	vec3 normal = texture(texture_normal0, texCoord).rgb;
+    normal = normalize(normal * 2.0 - 1.0);
+
+
+
+
+	vec3 lightDirection = normalize((TBN  * light.lightPosition) - TangentFragPos);
 	float diffuse = max(dot(normal, lightDirection), 0.0f);
 
 	// specular lighting
@@ -123,15 +153,15 @@ vec4 pointLightB(Light light) {
 	if (diffuse != 0.0f)
 	{
 		float specularLight = 0.50f;
-		vec3 viewDirection = normalize(camPos - crntPos);
+		vec3 viewDirection = normalize(TangentViewPos - TangentFragPos);
 		vec3 halfwayVec = normalize(viewDirection + lightDirection);
 		float specAmount = pow(max(dot(normal, halfwayVec), 0.0f), 16);
 		specular = specAmount * specularLight;
 	};
     float shadow = 0;
-    if (castShadow == 1) {
         shadow = ShadowCubeCalculation(fragPos, light) * castShadow;
-    }
+
+    //
 	return (texture(texture_diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(texture_specular0, texCoord).r * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
 
 
@@ -143,7 +173,7 @@ vec4 directLight(Light light)
     vec3 normal = normalize(Normal);
     vec3 lightColor = vec3(0.3);
     // ambient
-    vec3 ambient = 0.3 * color;
+    vec3 ambient = 0.5 * color;
     // diffuse
     vec3 lightDir = normalize(vec3(light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]) - crntPos);
     float diff = max(dot(lightDir, normal), 0.0);

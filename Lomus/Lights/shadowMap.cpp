@@ -37,7 +37,7 @@ void shadowMap::init(unsigned int width, unsigned int height)
 
 }
 
-void shadowMap::setLight(glm::vec3 lightPos, glm::vec3 lightDirection)
+void shadowMap::setLight(glm::vec3& lightPos, glm::vec3& lightDirection)
 {
 	float near_plane = 1.0f, far_plane = 1000.5f;
 	orthgonalProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
@@ -87,13 +87,17 @@ void shadowMap::initShader()
 	glUniformMatrix4fv(glGetUniformLocation(shadowMapShader.ID, "lightProjection"), 1, GL_FALSE, glm::value_ptr(lightProjection));
 }
 
+void shadowMap::updateShader(Shader& shader) {
+
+}
+
 
 
 
 ///CUBE MAP SHADOWS 
 //-----------------
 
-void cubeShadowMap::Init( int shadowMapWidth, int shadowMapHeight, float farPlane, glm::vec3 lightPos, Shader cubeMapShadowShader) {
+void cubeShadowMap::Init( int shadowMapWidth, int shadowMapHeight, float farPlane, glm::vec3& lightPos, Shader& cubeMapShadowShader) {
 
 	glGenFramebuffers(1, &pointShadowMapFBO);
 	
@@ -132,7 +136,7 @@ void cubeShadowMap::RenderPhaseEnd(float windowWidth, float windowHeight)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void cubeShadowMap::UpdateShader(Shader DefaultShader, float farPlane, glm::vec3 lightPos)
+void cubeShadowMap::UpdateShader(Shader& DefaultShader, float farPlane, glm::vec3& lightPos)
 {
 
 	DefaultShader.Activate();
@@ -146,7 +150,7 @@ void cubeShadowMap::UpdateShader(Shader DefaultShader, float farPlane, glm::vec3
 	glUniform3f(glGetUniformLocation(DefaultShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 }
 
-void cubeShadowMap::updateShadowMap(float farPlane, glm::vec3 lightPos, Shader shadowCubeMapProgram, int shadowMapWidth, int shadowMapHeight)
+void cubeShadowMap::updateShadowMap(float farPlane, glm::vec3& lightPos, Shader& shadowCubeMapProgram, int shadowMapWidth, int shadowMapHeight)
 {
 	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)shadowMapWidth / shadowMapHeight, 0.1f, farPlane);
 	glm::mat4 shadowTransforms[] =

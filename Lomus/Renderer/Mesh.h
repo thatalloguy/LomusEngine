@@ -69,19 +69,36 @@ public:
             glActiveTexture(GL_TEXTURE0 + i);
             string number;
             string name = textures[i].type;
-            if(name == "texture_diffuse")
+            if(name == "texture_diffuse") {
                 number = std::to_string(diffuseNr++);
-            else if(name == "texture_specular")
-                number = std::to_string(specularNr++); // transfer unsigned int to string
-            else if(name == "texture_normal")
+                // now set the sampler to the correct texture unit
+                glBindTexture(GL_TEXTURE_2D, textures[i].id);
+                glUniform1i(glGetUniformLocation(shader.ID, "texture_diffuse0"), i);
+                // and finally bind the texture
+
+            }
+            else if(name == "texture_specular") {
+                glBindTexture(GL_TEXTURE_2D, textures[i].id);
+                glUniform1i(glGetUniformLocation(shader.ID, "texture_specular0"), i);
+            }
+
+            else if(name == "texture_normal") {
                 number = std::to_string(normalNr++); // transfer unsigned int to string
+
+                // now set the sampler to the correct texture unit
+                glBindTexture(GL_TEXTURE_2D, textures[i].id);
+                glUniform1i(glGetUniformLocation(shader.ID, "texture_normal0"), i);
+                // and finally bind the texture
+
+            }
+
             else if(name == "texture_height")
                 number = std::to_string(heightNr++); // transfer unsigned int to string
+            else
+                std::cout << "other type: " << name << "\n";
 
-            // now set the sampler to the correct texture unit
-            glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
-            // and finally bind the texture
-            glBindTexture(GL_TEXTURE_2D, textures[i].id);
+
+
         }
 
         glUniform3f(glGetUniformLocation(shader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
@@ -144,18 +161,18 @@ private:
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
         // vertex tangent
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-        // vertex bitangent
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
-        // ids
         glEnableVertexAttribArray(5);
-        glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, m_BoneIDs));
+        glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+        // vertex bitangent
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
+        // ids
+        glEnableVertexAttribArray(7);
+        glVertexAttribIPointer(7, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, m_BoneIDs));
 
         // weights
-        glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
+        glEnableVertexAttribArray(8);
+        glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
         glBindVertexArray(0);
     }
 };

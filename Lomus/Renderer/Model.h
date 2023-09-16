@@ -129,6 +129,8 @@ private:
                 // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
                 vec.x = mesh->mTextureCoords[0][i].x;
                 vec.y = mesh->mTextureCoords[0][i].y;
+
+
                 vertex.TexCoords = vec;
                 // tangent
                 vector.x = mesh->mTangents[i].x;
@@ -141,8 +143,10 @@ private:
                 vector.z = mesh->mBitangents[i].z;
                 vertex.Bitangent = vector;
             }
-            else
+            else {
                 vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+
+            }
 
             vertices.push_back(vertex);
         }
@@ -164,7 +168,7 @@ private:
         vector<mTexture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         // 3. normal maps
-        std::vector<mTexture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+        std::vector<mTexture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         // 4. height maps
         std::vector<mTexture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
@@ -227,11 +231,14 @@ private:
 
             texture.type = tex.first;
             texture.path = tex.second;
+
             textures.push_back(texture);
             textures_loaded.push_back(
                     texture);
         }
     }
+
+
     vector<mTexture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName)
     {
         vector<mTexture> textures;
@@ -262,7 +269,7 @@ private:
                 //////////////
                 string filename = string(str.C_Str());
                 filename = directory + '/' + filename;
-                std::cout << "loading Texture: " << filename << "\n";
+                //std::cout << "loading Texture: " << filename << "\n";
                 unsigned int textureID;
                 glGenTextures(1, &textureID);
 
@@ -277,6 +284,8 @@ private:
                         format = GL_RGB;
                     else if (nrComponents == 4)
                         format = GL_RGBA;
+
+                    std::cout << "num: " << nrComponents << "\n";
 
                     glBindTexture(GL_TEXTURE_2D, textureID);
                     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
@@ -304,6 +313,7 @@ private:
                 texture.type = typeName;
                 texture.path = str.C_Str();
                 textures.push_back(texture);
+
                 textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
             }
         }

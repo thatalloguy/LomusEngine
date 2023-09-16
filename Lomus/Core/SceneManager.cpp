@@ -84,7 +84,7 @@ void SceneManager::createRigidBody(int GameObjectId, BodyType type)
 {
 	GameObject& currentGameObject = SceneManager::getGameobject(GameObjectId);
 	currentGameObject.Pvec3.x = currentGameObject.position.x;
-	currentGameObject.Pvec3.y = currentGameObject.position.y;
+	currentGameObject.Pvec3.y = -currentGameObject.position.y;
 	currentGameObject.Pvec3.z = currentGameObject.position.z;
 
 	currentGameObject.Pquat.x = currentGameObject.rotation.x;
@@ -124,7 +124,7 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp)
 		if (gameObject.second.isPhysical) {
 
 			gameObject.second.position.x = gameObject.second.mRigidBody->getTransform().getPosition().x;
-			gameObject.second.position.y = gameObject.second.mRigidBody->getTransform().getPosition().y;
+			gameObject.second.position.y = -gameObject.second.mRigidBody->getTransform().getPosition().y;
 			gameObject.second.position.z = gameObject.second.mRigidBody->getTransform().getPosition().z;
 
             tempQuat.x = gameObject.second.mRigidBody->getTransform().getOrientation().x;
