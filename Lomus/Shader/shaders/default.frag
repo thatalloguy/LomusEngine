@@ -133,19 +133,20 @@ vec4 pointLightB(Light light) {
 	float inten = light.lightInten / (a * dist * dist + b * dist + 1.0f);
 
 	// ambient lighting
-	float ambient = 0.30f;
+	float ambient = 0.40f;
 
 	// diffuse lighting
 
 
     //Normal maps
-	vec3 normal = texture(texture_normal0, texCoord).rgb;
-    normal = normalize(normal * 2.0 - 1.0);
+	vec3 normal = texture(texture_normal0, texCoord).rgb ;//normalize(Normal);
+    normal =normal * 2.0 - 1.0;
+    normal = normalize(TBN * normal);
 
 
 
 
-	vec3 lightDirection = normalize((TBN  * light.lightPosition) - TangentFragPos);
+	vec3 lightDirection = normalize(light.lightPosition - fragPos);
 	float diffuse = max(dot(normal, lightDirection), 0.0f);
 
 	// specular lighting
@@ -153,15 +154,16 @@ vec4 pointLightB(Light light) {
 	if (diffuse != 0.0f)
 	{
 		float specularLight = 0.50f;
-		vec3 viewDirection = normalize(TangentViewPos - TangentFragPos);
+		vec3 viewDirection = normalize((TBN * camPos) - (TBN * crntPos));
 		vec3 halfwayVec = normalize(viewDirection + lightDirection);
 		float specAmount = pow(max(dot(normal, halfwayVec), 0.0f), 16);
 		specular = specAmount * specularLight;
 	};
     float shadow = 0;
-        shadow = ShadowCubeCalculation(fragPos, light) * castShadow;
+        shadow = ShadowCubeCalculation(fragPos, light) * 0.8;
 
     //
+    //texture(texture_diffuse0, texCoord);
 	return (texture(texture_diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(texture_specular0, texCoord).r * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
 
 

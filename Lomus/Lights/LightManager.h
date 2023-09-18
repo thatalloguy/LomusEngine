@@ -21,19 +21,20 @@ class LightManager
 public:
 	void Init();
 	void Delete();
-	void createNewLight(Scene scene, glm::vec3 position, glm::vec4 color, float inten, string id);
-	
-	glm::vec3 getLightPosition(Scene& scene, string id);
-	glm::vec4 getLightColor(Scene& scene, string id);
-	float     getLightInten(Scene& scene, string id);
-	
-	void setLightPosition(Scene& scene, string id, glm::vec3 newPosition);
-	void setLightColor(Scene& scene, string id,    glm::vec4    newColor);
-	void setLightInten(Scene& scene, string id,    float        newInten);
+	void createNewLight(Scene& scene, glm::vec3& position, glm::vec4& color, float inten, string& id);
+	void createNewLight(Scene& scene, glm::vec3 position, glm::vec4 color, float inten, string id);
 
-	void updateShader(Shader shader, Scene scene);
+	glm::vec3 getLightPosition(Scene& scene, string& id);
+	glm::vec4 getLightColor(Scene& scene, string& id);
+	float     getLightInten(Scene& scene, string& id);
+	
+	void setLightPosition(Scene& scene, string& id, glm::vec3& newPosition);
+	void setLightColor(Scene& scene, string& id,    glm::vec4&    newColor);
+	void setLightInten(Scene& scene, string& id,    float        newInten);
 
-	void deleteLight(Scene& scene, string id);
+	void updateShader(Shader& shader, Scene& scene);
+
+	void deleteLight(Scene& scene, string& id);
 private:
 	unordered_map<string, unordered_map<string,int>> lightIdMap;
 	bool castShadow = false;
