@@ -41,4 +41,6 @@ private:
     bool togglePressed;
 
     bool toggleCurrentlyPressed;
+
+    void initStyle();
 };
