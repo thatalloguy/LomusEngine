@@ -47,6 +47,8 @@ uniform int lightType;
 uniform vec2 fog;
 uniform int castShadow;
 
+uniform float gamma;
+
 uniform int numLights;
 uniform Light lights[100]; 
 
@@ -160,11 +162,14 @@ vec4 pointLightB(Light light) {
 		specular = specAmount * specularLight;
 	};
     float shadow = 0;
-        shadow = ShadowCubeCalculation(fragPos, light) * 0.8;
+    if (castShadow == 1) {
+        shadow = ShadowCubeCalculation(fragPos, light) * 0.85;
+    }
+
 
     //
     //texture(texture_diffuse0, texCoord);
-	return (texture(texture_diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(texture_specular0, texCoord).r * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
+	return (texture(texture_diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(texture_specular0, texCoord).b * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
 
 
 }
@@ -233,6 +238,6 @@ void main()
         }
 	}
     color.a = 1;
-    FragColor = color;
+    FragColor =  vec4(pow(color.xyz, vec3(1.0f / gamma)), 1.0);
 	
 }

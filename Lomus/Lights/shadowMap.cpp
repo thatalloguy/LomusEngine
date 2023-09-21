@@ -143,9 +143,9 @@ void cubeShadowMap::UpdateShader(Shader& DefaultShader, float farPlane, glm::vec
 
 	glUniform1f(glGetUniformLocation(DefaultShader.ID, "farPlane"), farPlane);
 
-	glActiveTexture(GL_TEXTURE0 + 2);
+	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
-	glUniform1i(glGetUniformLocation(DefaultShader.ID, "shadowCubeMap"), 2);
+	glUniform1i(glGetUniformLocation(DefaultShader.ID, "shadowCubeMap"), 3);
     glUniform1i(glGetUniformLocation(DefaultShader.ID, "castShadow"), renderShadow);
 	glUniform3f(glGetUniformLocation(DefaultShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 }

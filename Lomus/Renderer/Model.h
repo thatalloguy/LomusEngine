@@ -164,13 +164,16 @@ private:
         // 1. diffuse maps
         vector<mTexture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        // 2. specular maps
-        vector<mTexture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-        textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
         // 3. normal maps
         std::vector<mTexture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         // 4. height maps
+        // 2. specular maps
+        vector<mTexture> specularMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_specular");
+        textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+
         std::vector<mTexture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
@@ -284,7 +287,6 @@ private:
                         format = GL_RGB;
                     else if (nrComponents == 4)
                         format = GL_RGBA;
-
 
                     glBindTexture(GL_TEXTURE_2D, textureID);
                     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);

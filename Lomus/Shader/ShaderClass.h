@@ -24,6 +24,7 @@ public:
 	
 	void setVec3Uniform(const char* name, float x, float y, float z);
 	void setVec4Uniform(const char* name, float x, float y, float z, float w);
+	void setFloatUniform(const char* name, float f);
 
 	GLuint getUniformLocation(const char* name);
 

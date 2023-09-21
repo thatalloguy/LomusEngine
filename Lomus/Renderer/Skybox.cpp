@@ -71,7 +71,7 @@ void Skybox::Init()
 	glUniform1i(glGetUniformLocation(skyboxShader.ID, "skybox"), 0);
 }
 
-void Skybox::Render(Camera camera, float width, float height)
+void Skybox::Render(Camera camera, float width, float height, float gamma)
 {
 	glDepthFunc(GL_LEQUAL);
 
@@ -84,6 +84,7 @@ void Skybox::Render(Camera camera, float width, float height)
 	projection = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(skyboxShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(glGetUniformLocation(skyboxShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+	glUniform1f(glGetUniformLocation(skyboxShader.ID, "gamma"), gamma);
 
 	// Draws the cubemap as the last object so we can save a bit of performance by discarding all fragments
 	// where an object is present (a depth of 1.0f will always fail against any object's depth value)
