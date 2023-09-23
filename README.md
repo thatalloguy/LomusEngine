@@ -1,9 +1,7 @@
 # LomusEngine
 
 LomusEngine is a game engine written in C++ with Opengl 3.0 core.
-
-
-![image](https://github.com/thatalloguy/LomusEngine/assets/51132972/7806900d-ecba-414c-9976-445503bf6953)
+![image](https://github.com/thatalloguy/LomusEngine/assets/51132972/a517e3d2-0f9d-4ae1-8d96-2d9201a48593)
 
 
 ![normalmap](https://github.com/thatalloguy/LomusEngine/assets/51132972/298cbcf5-443b-4590-900c-152319accf48)
