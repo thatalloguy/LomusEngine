@@ -63,7 +63,7 @@ float LightManager::getLightInten(Scene& scene, string& id)
 }
 
 
-void LightManager::setLightPosition(Scene& scene, string& id, glm::vec3& newPosition)
+void LightManager::setLightPosition(Scene& scene, string id, glm::vec3& newPosition)
 {
 	int findId = lightIdMap.at(scene.name).at(id);
 	lights[findId].lightPosition[1] = newPosition.x;

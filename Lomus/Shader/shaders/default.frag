@@ -48,6 +48,11 @@ uniform vec2 fog;
 uniform int castShadow;
 
 uniform float gamma;
+uniform float sSamples;
+uniform float sBaises;
+uniform float sOffset;
+uniform float lAmbient;
+uniform float shadowAmbient;
 
 uniform int numLights;
 uniform Light lights[100]; 
@@ -103,9 +108,9 @@ float ShadowCubeCalculation(vec3 fragPos, Light light)
     float currentDepth = length(fragToLight);
     // now test for shadows
     float shadow  = 0.0;
-    float bias    = 100;
-    float samples = 4.0;
-    float offset  = 30.7;
+    float bias    = sBaises;//100;
+    float samples = sSamples;//4.0;
+    float offset  = sOffset;//30.7;
     for(float x = -offset; x < offset; x += offset / (samples * 0.5))
     {
         for(float y = -offset; y < offset; y += offset / (samples * 0.5))
@@ -135,7 +140,7 @@ vec4 pointLightB(Light light) {
 	float inten = light.lightInten / (a * dist * dist + b * dist + 1.0f);
 
 	// ambient lighting
-	float ambient = 0.40f;
+	float ambient = lAmbient;//0.40f;
 
 	// diffuse lighting
 
@@ -163,7 +168,7 @@ vec4 pointLightB(Light light) {
 	};
     float shadow = 0;
     if (castShadow == 1) {
-        shadow = ShadowCubeCalculation(fragPos, light) * 0.85;
+        shadow = ShadowCubeCalculation(fragPos, light) * shadowAmbient;
     }
 
 

@@ -124,19 +124,19 @@ int main() {
 
     GameObject trees(glm::vec3(0, 10.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "Monkey");
     trees.createModel("../../Resources/Model/Monkey/scene.gltf");
-    //GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.05f, -0.05f, 0.05f), "bob");
+    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.05f, -0.05f, 0.05f), "bob");
 
-    //ground.createModel("../../Resources/Model/Sponza/sponza.gltf");
+    ground.createModel("../../Resources/Model/Sponza/sponza.gltf");
 
 
-    //sceneManager.addGameObject(ground, 2);
+    sceneManager.addGameObject(ground, 2);
     sceneManager.addGameObject(trees, 1);
 
-    glm::vec3 lightPos = glm::vec3(0, 1000, 0);
+    glm::vec3 lightPos = glm::vec3(0, 2141, -315);
 
     LightManager lightManager;
     lightManager.Init();
-    lightManager.createNewLight(sceneManager.getCurrentScene(), lightPos, glm::vec4(0.1f, 0.1f, 0.1f, 1), 2000, "light1");
+    lightManager.createNewLight(sceneManager.getCurrentScene(), lightPos, glm::vec4(0.1f, 0.1f, 0.1f, 1), 9910, "light1");
     float gamma = 1.5f;
     shaderProgram.setFloatUniform("gamma", gamma);
 
@@ -187,8 +187,17 @@ int main() {
     bool showErrors = false;
 
 
+    // Ooga booga Icon time
+    int imgWidth, imgHeight;
+    int channels;
+    unsigned char* iconPixels = stbi_load("../../Lomus/Resources/LogoV2.jpg", &imgWidth, &imgHeight, &channels, 4);
 
+    GLFWimage images[1];
+    images[0].width = imgWidth;
+    images[0].height = imgHeight;
+    images[0].pixels = iconPixels;
 
+    glfwSetWindowIcon(window, 1, images);
 
 
 
@@ -197,10 +206,23 @@ int main() {
     editor.Init(sceneManager);
 
 
+    std::string temp = "light1";
 
+
+    //load some shader stuff
+    shaderProgram.Activate();
+    shaderProgram.setFloatUniform("sSamples", 8.0f);
+    shaderProgram.setFloatUniform("sBiases", 100.0f);
+    shaderProgram.setFloatUniform("sOffset", 20.7f);
+    shaderProgram.setFloatUniform("shadowAmbient", 1.0f);
+
+    //shaderProgram.setFloatUniform("lA", 0.0003f);
+    //shaderProgram.setFloatUniform("lB", 0.00002f);
+    shaderProgram.setFloatUniform("lAmbient", 0.20f);
 
     while (!glfwWindowShouldClose(window)) {
 
+        lightPos = lightManager.getLightPosition(sceneManager.getCurrentScene(), temp);
         // Error checking
         GLenum err;
         if ((err = glGetError()) != GL_NO_ERROR && showErrors)
@@ -226,7 +248,6 @@ int main() {
         if (sceneManager.doPhysics) {
             sceneManager.UpdatePhysicsWorld(timeDiff);
         }
-
         //lightPos.y += 1;
         // lightManager.setLightPosition(sceneManager.getCurrentScene(), reString, lightPos);
 
@@ -239,7 +260,7 @@ int main() {
         cubeShadow.RenderPhaseEnd(width, height);
 
         // Normal Render Loop
-        if (editor.mConsole.mode == editor.mConsole.MODE_TOGGLE) {
+        if (!editor.visible) {
             camera.Inputs(window);
         }
 
@@ -263,7 +284,7 @@ int main() {
 
 
 
-        editor.Render(sceneManager, lightManager, window, camera, window_width, window_height, EditorMode::debug);
+        editor.Render(sceneManager, lightManager, window, shaderProgram, camera, window_width, window_height, EditorMode::debug);
 
         //Imgui render
         ImGui::Render();

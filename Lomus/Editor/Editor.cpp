@@ -97,10 +97,10 @@ void Lomus::Editor::Init(SceneManager &sceneManager) {
     mConsole.init();
 }
 
-void Lomus::Editor::Render(SceneManager &sceneManager,LightManager& lightManager, GLFWwindow* window, Camera& camera,  int windowWidth, int windowHeight, EditorMode mode) {
+void Lomus::Editor::Render(SceneManager &sceneManager,LightManager& lightManager, GLFWwindow* window,Shader& shader, Camera& camera,  int windowWidth, int windowHeight, EditorMode mode) {
     switch (mode) {
         case EditorMode::debug:
-            renderDebugModeData(sceneManager, lightManager, window, camera, windowWidth, windowHeight);
+            renderDebugModeData(sceneManager, lightManager, shader, window, camera, windowWidth, windowHeight);
 
     }
 }
@@ -108,39 +108,136 @@ void Lomus::Editor::Render(SceneManager &sceneManager,LightManager& lightManager
 void Lomus::Editor::Delete(SceneManager &sceneManager) {
 }
 
-void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager& lightManager,  GLFWwindow* window, Camera& camera,  int windowWidth, int windowHeight) {
-    ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.3, windowHeight * 0.7));
-    ImGui::Begin("Editor | Mode: debug");
+void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager& lightManager,Shader& shader,  GLFWwindow* window, Camera& camera,  int windowWidth, int windowHeight) {
 
-    ImGui::BeginTabBar("General");
+    if (visible) {
+        ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.3, windowHeight * 0.7));
+        ImGui::Begin("Editor | Mode: debug");
 
-    if (ImGui::BeginTabItem("Lights")) {
-        ImGui::Text("Nothing here yet :/");
-        ImGui::EndTabItem();
+        ImGui::BeginTabBar("General");
+
+        if (ImGui::BeginTabItem("Lights")) {
+            for (int i=0; i < lightManager.placeId; i++) {
+                std::string temp = "Light: " + std::to_string(i);
+
+                if (ImGui::TreeNode(temp.c_str())) {
+
+                    ImGui::Text("Position:");
+                    ImGui::PushID(temp.c_str());
+                    ImGui::DragFloat3("", lightManager.lights[i].lightPosition, 0.5f, 5.0f);
+                    ImGui::PopID();
+
+                    ImGui::Spacing();
+
+                    float v[4] = {lightManager.lights[i].lightColor_r,lightManager.lights[i].lightColor_g,lightManager.lights[i].lightColor_b,lightManager.lights[i].lightColor_a};
+                    temp = "col" + std::to_string(i);
+
+                    ImGui::Text("Color:");
+                    ImGui::PushID(temp.c_str());
+                    ImGui::DragFloat4("", v, 0.1f, 0.0f, 1.0f);
+                    ImGui::PopID();
+                    lightManager.lights[i].lightColor_r = v[0];
+                    lightManager.lights[i].lightColor_g = v[1];
+                    lightManager.lights[i].lightColor_b = v[2];
+                    lightManager.lights[i].lightColor_a = v[3];
+
+                    ImGui::Spacing();
+
+                    temp = "inten" + std::to_string(i);
+                    ImGui::Text("Inten");
+                    float* s = &lightManager.lights[i].lightInten;
+                    ImGui::SliderFloat("", s, 0.1f, 10000.0f);
+                    lightManager.lights[i].lightInten = *s;
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::EndTabItem();
+        }
+
+
+
+        if (ImGui::BeginTabItem("Entities")) {
+            ImGui::Text("Nothing here yet either :/");
+            ImGui::EndTabItem();
+        }
+
+
+
+        if (ImGui::BeginTabItem("Render")) {
+
+                shader.Activate();
+                shader.setFloatUniform("sSamples", shadowSamples[0]);
+                shader.setFloatUniform("sBiases", baises[0]);
+                shader.setFloatUniform("sOffset", offset[0]);
+                shader.setFloatUniform("lAmbient", ambient[0]);
+                shader.setFloatUniform("shadowAmbient", sAmbient[0]);
+            ImGui::Spacing();
+
+
+            ImGui::Spacing();
+            ImGui::Separator();
+
+            ImGui::Text("Shadows: ");
+            ImGui::Spacing();
+            ImGui::Text("Samples:");
+            ImGui::PushID("samp");
+            ImGui::DragFloat("",Editor::shadowSamples, 0.1f, 1.0f, 10.0f);
+            ImGui::PopID();
+
+            ImGui::Text("Baise:");
+            ImGui::PushID("bas");
+            ImGui::DragFloat("", Editor::baises, 1.0f, 1.0f, 100.0f);
+            ImGui::PopID();
+
+            ImGui::Text("Offset:");
+            ImGui::PushID("ofs");
+            ImGui::DragFloat("", Editor::offset, 0.5f, 1.0f, 100.0f);
+            ImGui::PopID();
+
+            ImGui::Text("Shadow Ambient:");
+            ImGui::PushID("sA");
+            ImGui::DragFloat("", Editor::sAmbient, 0.01f, 0.01f, 3.0f);
+            ImGui::PopID();
+
+
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::Text("Ambient");
+            ImGui::PushID("am");
+            ImGui::DragFloat("", Editor::ambient, 0.01f, 0.01f, 1.0f);
+            ImGui::PopID();
+
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Console")) {
+            mConsole.renderConsole(window, 400, 500, camera, sceneManager, Lomus::ConsoleMode::intergrated);
+            ImGui::EndTabItem();
+        }
+
+
+
+        ImGui::EndTabBar();
+
+        ImGui::End();
+
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && togglePressed) {
+
+            visible = 0;
+            togglePressed = false;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_RELEASE) {
+            togglePressed = true;
+        }
+    } else if (!visible) {
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && togglePressed) {
+
+            visible = 1;
+            togglePressed = false;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_RELEASE) {
+            togglePressed = true;
+        }
     }
 
-
-
-    if (ImGui::BeginTabItem("Entities")) {
-        ImGui::Text("Nothing here yet either :/");
-        ImGui::EndTabItem();
-    }
-
-
-
-    if (ImGui::BeginTabItem("Render")) {
-        ImGui::Text("Still nothing :(");
-        ImGui::EndTabItem();
-    }
-
-    if (ImGui::BeginTabItem("Console")) {
-        mConsole.renderConsole(window, 400, 500, camera, sceneManager, Lomus::ConsoleMode::intergrated);
-        ImGui::EndTabItem();
-    }
-
-
-
-    ImGui::EndTabBar();
-
-    ImGui::End();
 }
