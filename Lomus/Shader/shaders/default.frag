@@ -126,7 +126,7 @@ float ShadowCubeCalculation(vec3 fragPos, Light light)
 
 vec4 pointLightB(Light light) {
     vec3 fixedLightPos = vec3(light.lightPosition.x, light.lightPosition.y, light.lightPosition.z);
-    vec3 lightVec = fixedLightPos - crntPos;
+    vec3 lightVec = fixedLightPos - fragPos;
 
 	// intensity of light with respect to distance
 	float dist = length(lightVec);
@@ -156,7 +156,7 @@ vec4 pointLightB(Light light) {
 	if (diffuse != 0.0f)
 	{
 		float specularLight = 0.50f;
-		vec3 viewDirection = normalize((TBN * camPos) - (TBN * crntPos));
+		vec3 viewDirection = normalize((TBN * camPos) - (TBN * fragPos));
 		vec3 halfwayVec = normalize(viewDirection + lightDirection);
 		float specAmount = pow(max(dot(normal, halfwayVec), 0.0f), 16);
 		specular = specAmount * specularLight;

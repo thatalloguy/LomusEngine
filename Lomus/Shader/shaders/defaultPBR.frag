@@ -19,7 +19,7 @@ in vec3 color;
 in vec2 texCoord;
 
 in vec4 fragPosLight;
-in vec3 fragPos;
+in vec3 fragPos; // unused
 in mat3 TBN;
 
 
@@ -55,6 +55,8 @@ uniform Light lights[100];
 //These should be replaced with uniforms later on :/
 vec3 baseReflectance = vec3(0.04,0.04,0.04);
 vec3 emissivityMesh = vec3(0.1, 0.1, 0.1);
+
+
 
 
 float ShadowCalculation(vec4 fragPosLightSpace, Light light)
@@ -152,7 +154,7 @@ vec4 pointLightB(Light light) {
 
 
 
-    vec3 lightDirection = normalize(light.lightPosition - fragPos);
+    vec3 lightDirection = normalize(light.lightPosition - crntPos);
     float diffuse = max(dot(normal, lightDirection), 0.0f);
 
     // specular lighting
@@ -167,7 +169,7 @@ vec4 pointLightB(Light light) {
     };
     float shadow = 0;
     if (castShadow == 1) {
-        shadow = ShadowCubeCalculation(fragPos, light) * 0.85;
+        shadow = ShadowCubeCalculation(crntPos, light) * 0.85;
     }
 
 
@@ -220,6 +222,12 @@ float logisticDepth(float depth)
 
 void main()
 {
+
+    //corect the normal stuff
+    //camPos = TBN * camPos;
+    //crntPos = TBN * crntPos;
+
+
     vec4 color = vec4(0);
     // outputs final color
     float depth = logisticDepth(gl_FragCoord.z);

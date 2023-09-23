@@ -1,6 +1,7 @@
 #include "Console.h"
 #include <sstream>
 
+using namespace Lomus;
 
 void tokenize(std::string const& str, const char delim,
     std::vector<std::string>& out) // For spliting string 
@@ -111,11 +112,17 @@ void Console::addConsoleLog(const char* data)
 }
 
 
-void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& camera, SceneManager& sceneManager)
+void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& camera, SceneManager& sceneManager, ConsoleMode _mode)
 {
+    if (_mode == ConsoleMode::intergrated) {
+        mode = Console::MODE_WINDOW;
+    }
     if (mode == Console::MODE_WINDOW) {
-        ImGui::SetNextWindowSize(ImVec2(width, height));
-        ImGui::Begin("Console");
+        if (_mode == ConsoleMode::separate) {
+            ImGui::SetNextWindowSize(ImVec2(width, height));
+            ImGui::Begin("Console");
+        }
+
 
         if (ImGui::Button("Clear")) {
             Console::clearConsole();
@@ -143,8 +150,9 @@ void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& c
             }
             
         }
-        
-        ImGui::End();
+        if (_mode == ConsoleMode::separate) {
+            ImGui::End();
+        }
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && togglePressed) {
             

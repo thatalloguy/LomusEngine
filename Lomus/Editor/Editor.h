@@ -1,8 +1,13 @@
 #include "../../Thirdparty/imgui/imgui.h"
 #include "../Core/SceneManager.h"
-
+#include "../Lights/LightManager.h"
+#include "../Core/Console.h"
+#include <GLFW/glfw3.h>
 
 namespace Lomus {
+
+
+    enum EditorMode{debug,editor,release};
 
     class Editor {
 
@@ -12,11 +17,14 @@ namespace Lomus {
 
         void Delete(SceneManager& sceneManager);
 
-        void Render(SceneManager& sceneManager, int windowWidth, int windowHeight);
+        void Render(SceneManager& sceneManager,LightManager& lightManager, GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight, EditorMode mode);
+
+        Console mConsole;
 
     private:
 
-        void renderObjectListTab(SceneManager& sceneManager, int windowWidth, int windowHeight);
+        void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);
+
         void initStlyle();
 
 

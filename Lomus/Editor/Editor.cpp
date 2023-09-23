@@ -94,11 +94,53 @@ void Lomus::Editor::initStlyle() {
 
 void Lomus::Editor::Init(SceneManager &sceneManager) {
     initStlyle();
+    mConsole.init();
 }
 
-void Lomus::Editor::Render(SceneManager &sceneManager, int windowWidth, int windowHeight) {
+void Lomus::Editor::Render(SceneManager &sceneManager,LightManager& lightManager, GLFWwindow* window, Camera& camera,  int windowWidth, int windowHeight, EditorMode mode) {
+    switch (mode) {
+        case EditorMode::debug:
+            renderDebugModeData(sceneManager, lightManager, window, camera, windowWidth, windowHeight);
 
+    }
 }
 
 void Lomus::Editor::Delete(SceneManager &sceneManager) {
+}
+
+void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager& lightManager,  GLFWwindow* window, Camera& camera,  int windowWidth, int windowHeight) {
+    ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.3, windowHeight * 0.7));
+    ImGui::Begin("Editor | Mode: debug");
+
+    ImGui::BeginTabBar("General");
+
+    if (ImGui::BeginTabItem("Lights")) {
+        ImGui::Text("Nothing here yet :/");
+        ImGui::EndTabItem();
+    }
+
+
+
+    if (ImGui::BeginTabItem("Entities")) {
+        ImGui::Text("Nothing here yet either :/");
+        ImGui::EndTabItem();
+    }
+
+
+
+    if (ImGui::BeginTabItem("Render")) {
+        ImGui::Text("Still nothing :(");
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("Console")) {
+        mConsole.renderConsole(window, 400, 500, camera, sceneManager, Lomus::ConsoleMode::intergrated);
+        ImGui::EndTabItem();
+    }
+
+
+
+    ImGui::EndTabBar();
+
+    ImGui::End();
 }
