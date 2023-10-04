@@ -106,7 +106,7 @@ int main() {
 
     //Camera and init of shaders
 
-    Shader shaderProgram("../../Lomus/Shader/shaders/default.vert", "../../Lomus/Shader/shaders/default.frag");
+    Shader shaderProgram("../../Lomus/Shader/shaders/default.vert", "../../Lomus/Shader/shaders/defaultPBR.frag");
     Shader shadowCubeMapProgram("../../Lomus/Shader/shaders/shadowCubeMap.vert", "../../Lomus/Shader/shaders/shadowCubeMap.frag", "../../Lomus/Shader/shaders/shadowCubeMap.geom");
 
 
@@ -132,11 +132,11 @@ int main() {
     sceneManager.addGameObject(ground, 2);
     sceneManager.addGameObject(trees, 1);
 
-    glm::vec3 lightPos = glm::vec3(0, 2141, -315);
+    glm::vec3 lightPos = glm::vec3(0, 1000, 200);
 
     LightManager lightManager;
     lightManager.Init();
-    lightManager.createNewLight(sceneManager.getCurrentScene(), lightPos, glm::vec4(0.1f, 0.1f, 0.1f, 1), 9910, "light1");
+    lightManager.createNewLight(sceneManager.getCurrentScene(), lightPos, glm::vec4(0.1f, 0.1f, 0.1f, 1), 10, "light1");
     float gamma = 1.5f;
     shaderProgram.setFloatUniform("gamma", gamma);
 
@@ -168,7 +168,7 @@ int main() {
     console.addCommand("test", mySillyFunction);
 */
 
-
+    glShadeModel(GL_SMOOTH);
 
 
     sceneManager.doPhysics = false;
