@@ -1,4 +1,7 @@
 #include "../../Thirdparty/imgui/imgui.h"
+#include "../../Thirdparty/imgui/ImGuizmo.h"
+
+
 #include "../Core/SceneManager.h"
 #include "../Lights/LightManager.h"
 #include "../Core/Console.h"
@@ -18,18 +21,21 @@ namespace Lomus {
 
         void Delete(SceneManager& sceneManager);
 
-        void Render(SceneManager& sceneManager,LightManager& lightManager, GLFWwindow* window,Shader& shader,  Camera& camera, int windowWidth, int windowHeight, EditorMode mode);
+        void Render(SceneManager& sceneManager,LightManager& lightManager, GLFWwindow* window,Shader& shader, Shader& outlineShader,  Camera& camera, int windowWidth, int windowHeight, EditorMode mode);
+        void setShader(int i, Shader& shader);
+
 
         Console mConsole;
 
         int visible = 1;
     private:
 
-        void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,Shader& shader,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);
+        void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);
 
         void initStlyle();
         bool togglePressed = false;
 
+        unordered_map<int, Shader&> shaderList;
 
         // Debug editor stuff;
         float shadowSamples[1] = {8.0f};
@@ -40,6 +46,10 @@ namespace Lomus {
         float ambient[1] = {0.20f};
         float sAmbient[1] = {1.0f};
         bool autoUpdate[1] ={false};
+        int celLevel[1] = {5};
+        bool useNM[1] = {false};
+        float outlineThick[1] = {0.08};
+        float outlineColor[4] = {1, 1, 1, 1};
     };
 
 }

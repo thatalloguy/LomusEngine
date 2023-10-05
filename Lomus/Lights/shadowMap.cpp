@@ -125,7 +125,7 @@ void cubeShadowMap::Init( int shadowMapWidth, int shadowMapHeight, float farPlan
 void cubeShadowMap::RenderPhaseBegin(int shadowMapWidth, int shadowMapHeight)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, pointShadowMapFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glViewport(0, 0, shadowMapWidth, shadowMapHeight);
 }
 
@@ -133,7 +133,7 @@ void cubeShadowMap::RenderPhaseEnd(float windowWidth, float windowHeight)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, windowWidth, windowHeight);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void cubeShadowMap::UpdateShader(Shader& DefaultShader, float farPlane, glm::vec3& lightPos)

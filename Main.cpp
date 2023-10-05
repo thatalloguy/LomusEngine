@@ -106,7 +106,7 @@ int main() {
 
     //Camera and init of shaders
 
-    Shader shaderProgram("../../Lomus/Shader/shaders/default.vert", "../../Lomus/Shader/shaders/defaultPBR.frag");
+    Shader shaderProgram("../../Lomus/Shader/shaders/default.vert", "../../Lomus/Shader/shaders/default.frag");
     Shader shadowCubeMapProgram("../../Lomus/Shader/shaders/shadowCubeMap.vert", "../../Lomus/Shader/shaders/shadowCubeMap.frag", "../../Lomus/Shader/shaders/shadowCubeMap.geom");
 
 
@@ -122,17 +122,17 @@ int main() {
     sceneManager.createNewScene("mainScene");
     sceneManager.setCurrentScene("mainScene");
 
-    GameObject trees(glm::vec3(0, 10.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "Monkey");
-    trees.createModel("../../Resources/Model/Monkey/scene.gltf");
-    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.05f, -0.05f, 0.05f), "bob");
+    GameObject trees(glm::vec3(0, 10.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "Astronaut");
+    trees.createModel("../../Resources/Model/Astronaut/astronaut.obj");
+    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "ground");
 
-    ground.createModel("../../Resources/Model/Sponza/sponza.gltf");
+    ground.createModel("../../Resources/Model/ground/ground.gltf");
 
 
     sceneManager.addGameObject(ground, 2);
     sceneManager.addGameObject(trees, 1);
 
-    glm::vec3 lightPos = glm::vec3(0, 1000, 200);
+    glm::vec3 lightPos = glm::vec3(0, 50, 0);
 
     LightManager lightManager;
     lightManager.Init();
@@ -168,7 +168,6 @@ int main() {
     console.addCommand("test", mySillyFunction);
 */
 
-    glShadeModel(GL_SMOOTH);
 
 
     sceneManager.doPhysics = false;
@@ -215,10 +214,27 @@ int main() {
     shaderProgram.setFloatUniform("sBiases", 100.0f);
     shaderProgram.setFloatUniform("sOffset", 20.7f);
     shaderProgram.setFloatUniform("shadowAmbient", 1.0f);
-
+    shaderProgram.setIntUniform("shadeLevels", 5);
+    shaderProgram.setIntUniform("useNormalMap", 0);
     //shaderProgram.setFloatUniform("lA", 0.0003f);
     //shaderProgram.setFloatUniform("lB", 0.00002f);
     shaderProgram.setFloatUniform("lAmbient", 0.20f);
+
+
+    // Outline stuff
+
+
+    Shader outlineShader("../../Lomus/Shader/shaders/outline.vert","../../Lomus/Shader/shaders/outline.frag");
+    editor.setShader(1, outlineShader);
+
+
+    outlineShader.Activate();
+    outlineShader.setVec4Uniform("color", 1, 1, 1, 1);
+    outlineShader.setFloatUniform("thickness", 0.08f);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
 
     while (!glfwWindowShouldClose(window)) {
 
@@ -258,6 +274,8 @@ int main() {
         sceneManager.renderCurrentScene(shadowCubeMapProgram, camera);
 
         cubeShadow.RenderPhaseEnd(width, height);
+        glClearColor(0.2, 0.7, 0.8, 1);
+
 
         // Normal Render Loop
         if (!editor.visible) {
@@ -269,12 +287,33 @@ int main() {
 
         cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
 
+
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+
+        shaderProgram.Activate();
         sceneManager.renderCurrentScene(shaderProgram, camera);
+        shaderProgram.Deactivate();
+
+
+
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glDisable(GL_DEPTH_TEST);
+
+
+        outlineShader.Activate();
+        sceneManager.renderCurrentScene(outlineShader, camera);
+        outlineShader.Deactivate();
+
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 0, 0xFF);
+        glEnable(GL_DEPTH_TEST);
 
         ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
 
 
-        skybox.Render(camera, width, height, gamma);
+        //skybox.Render(camera, width, height, gamma);
 
         // Init imgui
         ImGui_ImplOpenGL3_NewFrame();
@@ -284,7 +323,7 @@ int main() {
 
 
 
-        editor.Render(sceneManager, lightManager, window, shaderProgram, camera, window_width, window_height, EditorMode::debug);
+        editor.Render(sceneManager, lightManager, window, shaderProgram, outlineShader, camera, window_width, window_height, EditorMode::debug);
 
         //Imgui render
         ImGui::Render();

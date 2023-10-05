@@ -226,6 +226,7 @@ private:
 
                 std::cout << "O\n";
                 stbi_image_free(data);
+
             }
 
 

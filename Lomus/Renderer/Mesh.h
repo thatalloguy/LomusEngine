@@ -83,7 +83,7 @@ public:
         glm::mat4 sca = glm::mat4(1.0f);
 
         // Transform the matrices to their correct form
-        translation.y = -translation.y;
+        //translation.y = -translation.y;
         trans = glm::translate(trans, translation);
         rot = glm::mat4_cast(rotation);
         sca = glm::scale(sca, scale);

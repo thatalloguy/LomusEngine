@@ -34,6 +34,8 @@ void LightManager::updateShader(Shader& shader, Scene& scene)
 		std::string curP = "lights[" + std::to_string(i) + "].lightPosition";
 		std::string curC = "lights[" + std::to_string(i) + "].lightColor";
 		std::string curI = "lights[" + std::to_string(i) + "].lightInten";
+
+
 		Light cLight = lights[i];
 		shader.Activate();
 		glUniform3f(glGetUniformLocation(shader.ID, curC.c_str()), cLight.lightColor_r, cLight.lightColor_g, cLight.lightColor_b);

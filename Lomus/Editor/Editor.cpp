@@ -97,10 +97,10 @@ void Lomus::Editor::Init(SceneManager &sceneManager) {
     mConsole.init();
 }
 
-void Lomus::Editor::Render(SceneManager &sceneManager,LightManager& lightManager, GLFWwindow* window,Shader& shader, Camera& camera,  int windowWidth, int windowHeight, EditorMode mode) {
+void Lomus::Editor::Render(SceneManager &sceneManager,LightManager& lightManager, GLFWwindow* window,Shader& shader, Shader& outlineShader, Camera& camera,  int windowWidth, int windowHeight, EditorMode mode) {
     switch (mode) {
         case EditorMode::debug:
-            renderDebugModeData(sceneManager, lightManager, shader, window, camera, windowWidth, windowHeight);
+            renderDebugModeData(sceneManager, lightManager, shader, outlineShader, window, camera, windowWidth, windowHeight);
 
     }
 }
@@ -108,7 +108,7 @@ void Lomus::Editor::Render(SceneManager &sceneManager,LightManager& lightManager
 void Lomus::Editor::Delete(SceneManager &sceneManager) {
 }
 
-void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager& lightManager,Shader& shader,  GLFWwindow* window, Camera& camera,  int windowWidth, int windowHeight) {
+void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader, GLFWwindow* window, Camera& camera,  int windowWidth, int windowHeight) {
 
     if (visible) {
         ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.3, windowHeight * 0.7));
@@ -145,8 +145,10 @@ void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager&
 
                     temp = "inten" + std::to_string(i);
                     ImGui::Text("Inten");
-                    float* s = &lightManager.lights[i].lightInten;
-                    ImGui::SliderFloat("", s, 0.1f, 10000.0f);
+                    float s[1] = {lightManager.lights[i].lightInten};
+                    ImGui::PushID(temp.c_str());
+                    ImGui::DragFloat("", s, 0.1f, 0.0f);
+                    ImGui::PopID();
                     lightManager.lights[i].lightInten = *s;
                     ImGui::TreePop();
                 }
@@ -157,7 +159,29 @@ void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager&
 
 
         if (ImGui::BeginTabItem("Entities")) {
-            ImGui::Text("Nothing here yet either :/");
+
+
+            Scene& curScene = sceneManager.getCurrentScene();
+            string temp = "";
+            for (auto& gameObject : curScene.gameObjects) {
+                if (ImGui::TreeNode(gameObject.second.name.c_str())) {
+
+                    ImGui::Spacing();
+                    ImGui::Text("Position: ");
+                    temp = gameObject.second.name + "Pos";
+                    ImGui::PushID(temp.c_str());
+                    float v[3] = {gameObject.second.position.x, gameObject.second.position.y, gameObject.second.position.z};
+                    ImGui::DragFloat3("", v, 0.5f, -20);
+                    ImGui::PopID();
+                    gameObject.second.position.x = v[0];
+                    gameObject.second.position.y = v[1];
+                    gameObject.second.position.z = v[2];
+
+                    ImGui::TreePop();
+                }
+            }
+
+
             ImGui::EndTabItem();
         }
 
@@ -171,6 +195,14 @@ void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager&
                 shader.setFloatUniform("sOffset", offset[0]);
                 shader.setFloatUniform("lAmbient", ambient[0]);
                 shader.setFloatUniform("shadowAmbient", sAmbient[0]);
+                shader.setIntUniform("shadeLevels", celLevel[0]);
+                shader.setIntUniform("useNormalMap", useNM[0]);
+
+
+                outlineShader.Activate();
+                outlineShader.setFloatUniform("thickness", outlineThick[0]);
+                outlineShader.setVec4Uniform("color", outlineColor[0], outlineColor[1], outlineColor[2], outlineColor[3]);
+
             ImGui::Spacing();
 
 
@@ -207,6 +239,29 @@ void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager&
             ImGui::DragFloat("", Editor::ambient, 0.01f, 0.01f, 1.0f);
             ImGui::PopID();
 
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::Text("Toon shader");
+            ImGui::Spacing();
+            ImGui::Text("Cel Levels");
+            ImGui::PushID("cl");
+            ImGui::DragInt("", Editor::celLevel, 1, 1, 20);
+            ImGui::PopID();
+            ImGui::Text("Use Normal Maps");
+            ImGui::PushID("uNM");
+            ImGui::Checkbox("", Editor::useNM);
+            ImGui::PopID();
+
+            ImGui::Spacing();
+            ImGui::Text("Outline Width:");
+            ImGui::PushID("oT");
+            ImGui::DragFloat("", Editor::outlineThick, 0.01f, 0.01f, 1);
+            ImGui::PopID();
+            ImGui::Text("Outline Color");
+            ImGui::PushID("oC");
+            ImGui::DragFloat4("", Editor::outlineColor, 0.01f, 0, 1);
+            ImGui::PopID();
+
             ImGui::EndTabItem();
         }
 
@@ -240,4 +295,8 @@ void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager&
         }
     }
 
+}
+
+void Editor::setShader(int name, Shader &shader) {
+    shaderList.emplace(name, shader);
 }
