@@ -188,3 +188,7 @@ void Shader::compileErrors(unsigned int shader, const char* type)
 		}
 	}
 }
+
+void Shader::Recompile() {
+    Shader(vertexFile, fragmentFile);
+}

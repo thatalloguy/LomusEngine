@@ -17,6 +17,9 @@ namespace Lomus {
         float lightColor_b;
         float lightColor_a;
         float lightInten;
+        float lightAngle[3];
+        int lightType;
+        std::string name;
     };
 
 }
@@ -24,9 +27,9 @@ class LightManager
 {
 public:
 	void Init();
+    void InitScene(Scene& scene);
 	void Delete();
-	void createNewLight(Scene& scene, glm::vec3& position, glm::vec4& color, float inten, string& id);
-	void createNewLight(Scene& scene, glm::vec3 position, glm::vec4 color, float inten, string id);
+	void createNewLight(Scene& scene, Light& light);
 
 	glm::vec3 getLightPosition(Scene& scene, string& id);
 	glm::vec4 getLightColor(Scene& scene, string& id);

@@ -3,12 +3,14 @@
 #include <iostream>
 
 namespace Lomus{
+
     class FrameBuffer {
     public:
-        void Init();
+        FrameBuffer(int resolutionWidth, int resolutionHeight);
         void Delete();
-    private:
+
         unsigned int fbo;
+        unsigned int fboTexture;
     };
 
 }

@@ -4,6 +4,8 @@ struct Light {
     vec3 lightPosition;
     vec3 lightColor;
     float lightInten;
+    vec3 lightAngle;
+    int lightType;
 };
 
 // Outputs colors in RGBA
@@ -214,7 +216,7 @@ vec4 pointLightB(Light light) {
     vec3 lightDirection = normalize(light.lightPosition - fragPos);
     float diffuse = max(dot(normal, lightDirection), 0.0f);
     float level = floor(diffuse * shadeLevels);
-    diffuse = level / shadeLevels;
+    //diffuse;// = level / shadeLevels;
 
     vec3 newFragPos = fragPos;
     vec3 newCamPos = camPos;
@@ -233,27 +235,15 @@ vec4 pointLightB(Light light) {
         specular = specAmount * specularLight;
     };
     float shadow = 0;
-    if (castShadow == 1) {
-        shadow = ShadowCubeCalculation(fragPos) * shadowAmbient;
-    }
+    //if (castShadow == 1) {
+    //    shadow = ShadowCubeCalculation(fragPos) * shadowAmbient;
+    //}
 
 
     //
     //texture(texture_diffuse0, texCoord);
     float intensity = dot(lightDirection, normal);
     vec4 color = (texture(texture_diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(texture_specular0, texCoord).b * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
-    /*
-    vec4 toonColor;
-
-    if (intensity > 0.95)
-      toonColor = vec4(color.xyz * 0.99, 1.0);
-    else if (intensity > 0.5)
-       toonColor = vec4(color.xyz * 0.66, 1.0);
-    else if (intensity > 0.25)
-    toonColor = vec4(color.xyz * 0.33, 1.0);
-    else
-    toonColor = vec4(color.xyz * 0.2, 1.0);
-*/
 
     return color;
 

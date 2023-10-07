@@ -11,19 +11,6 @@ void LightManager::Delete()
 
 }
 
-void LightManager::createNewLight(Scene& scene, glm::vec3& position, glm::vec4& color, float inten, string& id)
-{
-	std::cout << "POSITION: " << position.x << " | " << position.y << " | " << position.z << "\n";
-	std::cout << "COLOR: " << color.x << " | " << color.y << " | " << color.z << "\n";
-	unordered_map<string, int> newMap;
-	newMap.emplace(id, placeId);
-	lightIdMap.emplace(scene.name, newMap);
-	
-	Light newLight = { {position.x, position.y, position.z}, color.r, color.g, color.b, color.a, inten };
-	lights[placeId] = newLight;
-	placeId++;
-}
-
 
 void LightManager::updateShader(Shader& shader, Scene& scene)
 {
@@ -34,6 +21,8 @@ void LightManager::updateShader(Shader& shader, Scene& scene)
 		std::string curP = "lights[" + std::to_string(i) + "].lightPosition";
 		std::string curC = "lights[" + std::to_string(i) + "].lightColor";
 		std::string curI = "lights[" + std::to_string(i) + "].lightInten";
+		std::string curA = "lights[" + std::to_string(i) + "].lightAngle";
+		std::string curT = "lights[" + std::to_string(i) + "].lightType";
 
 
 		Light cLight = lights[i];
@@ -41,6 +30,8 @@ void LightManager::updateShader(Shader& shader, Scene& scene)
 		glUniform3f(glGetUniformLocation(shader.ID, curC.c_str()), cLight.lightColor_r, cLight.lightColor_g, cLight.lightColor_b);
 		glUniform3f(glGetUniformLocation(shader.ID, curP.c_str()), cLight.lightPosition[0], cLight.lightPosition[1], cLight.lightPosition[2]);
 		glUniform1f(glGetUniformLocation(shader.ID, curI.c_str()), cLight.lightInten);
+		glUniform3f(glGetUniformLocation(shader.ID, curA.c_str()), cLight.lightAngle[0], cLight.lightAngle[1], cLight.lightAngle[2]);
+		glUniform1i(glGetUniformLocation(shader.ID, curT.c_str()), cLight.lightType);
 	}
 	
 }
@@ -93,15 +84,14 @@ void LightManager::deleteLight(Scene& scene, string& id)
 	lightIdMap.erase(id);
 }
 
-void LightManager::createNewLight(Scene &scene, glm::vec3 position, glm::vec4 color, float inten, string id) {
-    std::cout << "POSITION: " << position.x << " | " << position.y << " | " << position.z << "\n";
-    std::cout << "COLOR: " << color.x << " | " << color.y << " | " << color.z << "\n";
-    unordered_map<string, int> newMap;
-    newMap.emplace(id, placeId);
-    lightIdMap.emplace(scene.name, newMap);
 
-    Light newLight = { {position.x, position.y, position.z}, color.r, color.g, color.b, color.a, inten };
-    lights[placeId] = newLight;
-    placeId++;
+void LightManager::InitScene(Scene &scene) {
+    unordered_map<string, int> newMap;
+    lightIdMap.emplace(scene.name, newMap);
 }
 
+void LightManager::createNewLight(Scene &scene, Light &light) {
+        lightIdMap.at(scene.name).emplace(light.name, placeId);
+        lights[placeId] = light;
+        placeId++;
+}

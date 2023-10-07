@@ -1,6 +1,6 @@
 #ifndef SHADER_CLASS_H
 #define SHADER_CLASS_H
-
+#pragma once
 
 #include <string>
 #include <fstream>
@@ -33,7 +33,15 @@ public:
 	void Deactivate();
 	// Deletes the Shader Program
 	void Delete();
+
+    void Recompile();
+
 private:
+    const char* vertexFile; // for recompiling;
+    const char* fragmentFile;
+
+
+
 	// Checks if the different Shaders have compiled properly
 	void compileErrors(unsigned int shader, const char* type);
 };

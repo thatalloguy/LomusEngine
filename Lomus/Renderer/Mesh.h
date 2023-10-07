@@ -65,6 +65,7 @@ public:
         {
 
             glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
+
             // retrieve texture number (the N in diffuse_textureN)
             string number;
             string name = textures[i].type;
@@ -83,7 +84,7 @@ public:
         glm::mat4 sca = glm::mat4(1.0f);
 
         // Transform the matrices to their correct form
-        //translation.y = -translation.y;
+        translation.y = translation.y;
         trans = glm::translate(trans, translation);
         rot = glm::mat4_cast(rotation);
         sca = glm::scale(sca, scale);

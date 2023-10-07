@@ -1,4 +1,3 @@
-// Other libraries 
 
 #include <iostream>
 
@@ -40,24 +39,24 @@ int height;
 
 
 static bool GLLogCall(const char* function, const char* file, int line) {
-	while (GLenum error = glGetError()) {
-		std::cout << "Opengl error: (" << error << "); function: " << function << "; line: " << line << "; file: " << file << "\n";
-		return false;
+    while (GLenum error = glGetError()) {
+        std::cout << "Opengl error: (" << error << "); function: " << function << "; line: " << line << "; file: " << file << "\n";
+        return false;
 
-	}
-	return true;
+    }
+    return true;
 
 }
 
 void mySillyFunction(std::vector<std::string> args, Camera& camera, SceneManager& sceneManager, Console &console) {
-	std::string message = "[OUTPUT] Hello World!: " + args[0] + "\n";
-	console.addConsoleLog(message.c_str());
+    std::string message = "[OUTPUT] Hello World!: " + args[0] + "\n";
+    console.addConsoleLog(message.c_str());
 }
 
 
 
 int main() {
-	//EDITOR VERSION
+    //EDITOR VERSION
 
 
     //Window init
@@ -126,17 +125,26 @@ int main() {
     trees.createModel("../../Resources/Model/Astronaut/astronaut.obj");
     GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "ground");
 
-    ground.createModel("../../Resources/Model/ground/ground.gltf");
+    ground.createModel("../../Resources/Model/tree_ground/scene.gltf");
 
 
     sceneManager.addGameObject(ground, 2);
     sceneManager.addGameObject(trees, 1);
 
-    glm::vec3 lightPos = glm::vec3(0, 50, 0);
+
+
+    Light sun = Light{
+            {0.0, 50, 0.0},
+            1,1, 1, 1,
+            20,
+            {1, 1, 1},
+            1,
+            "Sun"
+    };
 
     LightManager lightManager;
-    lightManager.Init();
-    lightManager.createNewLight(sceneManager.getCurrentScene(), lightPos, glm::vec4(0.1f, 0.1f, 0.1f, 1), 10, "light1");
+    lightManager.InitScene(sceneManager.getCurrentScene());
+    lightManager.createNewLight(sceneManager.getCurrentScene(), sun);
     float gamma = 1.5f;
     shaderProgram.setFloatUniform("gamma", gamma);
 
@@ -151,23 +159,15 @@ int main() {
     unsigned int shadowMapWidth = 1024;
     unsigned int shadowMapHeight = 1024;
 
-    cubeShadowMap cubeShadow{};
-    cubeShadow.Init(1024, 1024, farPlane, lightPos, shadowCubeMapProgram);
-    cubeShadow.renderShadow = 1; // true
+    //cubeShadowMap cubeShadow{};
+    //cubeShadow.Init(1024, 1024, farPlane, lightPos, shadowCubeMapProgram);
+    //cubeShadow.renderShadow = 1; // true
 
     //fps counter
     double prevTime = 0.0;
     double crntTime = 0.0;
     double timeDiff;
     unsigned int counter = 0;
-
-
-/*
-    Console console;
-    console.init();
-    console.addCommand("test", mySillyFunction);
-*/
-
 
 
     sceneManager.doPhysics = false;
@@ -186,7 +186,7 @@ int main() {
     bool showErrors = false;
 
 
-    // Ooga booga Icon time
+    //Icon time
     int imgWidth, imgHeight;
     int channels;
     unsigned char* iconPixels = stbi_load("../../Lomus/Resources/LogoV2.jpg", &imgWidth, &imgHeight, &channels, 4);
@@ -207,38 +207,21 @@ int main() {
 
     std::string temp = "light1";
 
-
+    Shader outline("../../Lomus/Shader/shaders/outline.vert", "../../Lomus/Shader/shaders/outline.frag");
     //load some shader stuff
     shaderProgram.Activate();
     shaderProgram.setFloatUniform("sSamples", 8.0f);
     shaderProgram.setFloatUniform("sBiases", 100.0f);
     shaderProgram.setFloatUniform("sOffset", 20.7f);
     shaderProgram.setFloatUniform("shadowAmbient", 1.0f);
-    shaderProgram.setIntUniform("shadeLevels", 5);
-    shaderProgram.setIntUniform("useNormalMap", 0);
+
     //shaderProgram.setFloatUniform("lA", 0.0003f);
     //shaderProgram.setFloatUniform("lB", 0.00002f);
     shaderProgram.setFloatUniform("lAmbient", 0.20f);
 
-
-    // Outline stuff
-
-
-    Shader outlineShader("../../Lomus/Shader/shaders/outline.vert","../../Lomus/Shader/shaders/outline.frag");
-    editor.setShader(1, outlineShader);
-
-
-    outlineShader.Activate();
-    outlineShader.setVec4Uniform("color", 1, 1, 1, 1);
-    outlineShader.setFloatUniform("thickness", 0.08f);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_STENCIL_TEST);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
-
     while (!glfwWindowShouldClose(window)) {
 
-        lightPos = lightManager.getLightPosition(sceneManager.getCurrentScene(), temp);
+        //lightPos = lightManager.getLightPosition(sceneManager.getCurrentScene(), temp);
         // Error checking
         GLenum err;
         if ((err = glGetError()) != GL_NO_ERROR && showErrors)
@@ -264,20 +247,17 @@ int main() {
         if (sceneManager.doPhysics) {
             sceneManager.UpdatePhysicsWorld(timeDiff);
         }
-        //lightPos.y += 1;
-        // lightManager.setLightPosition(sceneManager.getCurrentScene(), reString, lightPos);
 
-        cubeShadow.updateShadowMap(10000, lightPos, shadowCubeMapProgram, 1024, 1024);
-        cubeShadow.RenderPhaseBegin(shadowMapWidth, shadowMapHeight);
+        //cubeShadow.updateShadowMap(10000, lightPos, shadowCubeMapProgram, 1024, 1024);
+        //cubeShadow.RenderPhaseBegin(shadowMapWidth, shadowMapHeight);
 
-        // Draw scene for shadow map
-        sceneManager.renderCurrentScene(shadowCubeMapProgram, camera);
+        //sceneManager.renderCurrentScene(shadowCubeMapProgram, camera);
 
-        cubeShadow.RenderPhaseEnd(width, height);
-        glClearColor(0.2, 0.7, 0.8, 1);
-
+        //cubeShadow.RenderPhaseEnd(width, height);
 
         // Normal Render Loop
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glClearColor(0.1, 0.5, 0.6, 1);
         if (!editor.visible) {
             camera.Inputs(window);
         }
@@ -285,30 +265,9 @@ int main() {
         camera.updateMatrix(45.0f, 0.1f, 1000.0f);
         lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
 
-        cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
+        //cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
 
-
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glStencilMask(0xFF);
-
-        shaderProgram.Activate();
         sceneManager.renderCurrentScene(shaderProgram, camera);
-        shaderProgram.Deactivate();
-
-
-
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-        glDisable(GL_DEPTH_TEST);
-
-
-        outlineShader.Activate();
-        sceneManager.renderCurrentScene(outlineShader, camera);
-        outlineShader.Deactivate();
-
-        glStencilMask(0xFF);
-        glStencilFunc(GL_ALWAYS, 0, 0xFF);
-        glEnable(GL_DEPTH_TEST);
 
         ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
 
@@ -323,7 +282,7 @@ int main() {
 
 
 
-        editor.Render(sceneManager, lightManager, window, shaderProgram, outlineShader, camera, window_width, window_height, EditorMode::debug);
+        editor.Render(sceneManager, lightManager, window, shaderProgram, outline, camera, window_width, window_height, EditorMode::debug);
 
         //Imgui render
         ImGui::Render();
