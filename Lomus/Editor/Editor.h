@@ -28,6 +28,7 @@ namespace Lomus {
         Console mConsole;
 
         int visible = 1;
+        unsigned int shadowTexture;
     private:
 
         void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);

@@ -7,8 +7,9 @@
 #include <string>
 
 struct Scene {
-	std::string name;
-	std::unordered_map<int, GameObject> gameObjects;
+
+    std::string name;
+	std::unordered_map<int, GameObject&> gameObjects;
 	PhysicsWorld* world;
 };
 
@@ -24,7 +25,7 @@ public:
 	Scene &getCurrentScene();
 	GameObject &getGameobject(int id);
 
-	void renderCurrentScene(Shader& shader, Camera& camera);
+	void renderCurrentScene(Shader& shader, Lomus::Camera& camera);
 
 	void Delete();
 
@@ -38,11 +39,11 @@ public:
 	PhysicsCommon common;
 	bool doPhysics = true;
 
+    Scene currentScene;
 	
 
 private:
 	unordered_map<string, Scene> scenes;
-	Scene currentScene;
 	bool isItFirstScene = true;
     Quaternion tempQuat;
 };

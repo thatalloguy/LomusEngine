@@ -8,6 +8,7 @@
 
 #include <reactphysics3d/reactphysics3d.h>
 #include "Libs/Include/stb/std_image.h"
+#include <glm/gtc/random.hpp>
 
 //Engine
 #include "Lomus/Renderer/Texture.h"
@@ -36,8 +37,6 @@ using namespace Lomus;
 int width;
 int height;
 
-
-
 static bool GLLogCall(const char* function, const char* file, int line) {
     while (GLenum error = glGetError()) {
         std::cout << "Opengl error: (" << error << "); function: " << function << "; line: " << line << "; file: " << file << "\n";
@@ -64,7 +63,9 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    //const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
     int window_width = 1280;// mode->width;
     int window_height = 720;// mode->height;
@@ -89,6 +90,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_MULTISAMPLE);
 
 
 
@@ -106,7 +108,6 @@ int main() {
     //Camera and init of shaders
 
     Shader shaderProgram("../../Lomus/Shader/shaders/default.vert", "../../Lomus/Shader/shaders/default.frag");
-    Shader shadowCubeMapProgram("../../Lomus/Shader/shaders/shadowCubeMap.vert", "../../Lomus/Shader/shaders/shadowCubeMap.frag", "../../Lomus/Shader/shaders/shadowCubeMap.geom");
 
 
     shaderProgram.Activate();
@@ -121,25 +122,26 @@ int main() {
     sceneManager.createNewScene("mainScene");
     sceneManager.setCurrentScene("mainScene");
 
-    GameObject trees(glm::vec3(0, 10.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "Astronaut");
+    GameObject trees(glm::vec3(0, -20.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(9.0f, -4.0f, 7.0f), "Astronaut");
     trees.createModel("../../Resources/Model/Astronaut/astronaut.obj");
-    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "ground");
+    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(10.0f, -1.0f, 10.0f), "Sponza");
 
     ground.createModel("../../Resources/Model/tree_ground/scene.gltf");
 
 
-    sceneManager.addGameObject(ground, 2);
     sceneManager.addGameObject(trees, 1);
+    sceneManager.addGameObject(ground, 2);
 
 
 
     Light sun = Light{
-            {0.0, 50, 0.0},
+            0, 50, 0,
             1,1, 1, 1,
-            20,
-            {1, 1, 1},
             1,
-            "Sun"
+            {-0.2f, -1.0f, -0.3f},
+            1,
+            "Sun",
+            true
     };
 
     LightManager lightManager;
@@ -154,14 +156,10 @@ int main() {
     skybox.Init();
 
 
-    // Shadow map
-    float farPlane = 10000.0f;
-    unsigned int shadowMapWidth = 1024;
-    unsigned int shadowMapHeight = 1024;
+    //Shadow
 
-    //cubeShadowMap cubeShadow{};
-    //cubeShadow.Init(1024, 1024, farPlane, lightPos, shadowCubeMapProgram);
-    //cubeShadow.renderShadow = 1; // true
+    ShadowMap shadowMap;
+    shadowMap.init();
 
     //fps counter
     double prevTime = 0.0;
@@ -215,13 +213,14 @@ int main() {
     shaderProgram.setFloatUniform("sOffset", 20.7f);
     shaderProgram.setFloatUniform("shadowAmbient", 1.0f);
 
-    //shaderProgram.setFloatUniform("lA", 0.0003f);
-    //shaderProgram.setFloatUniform("lB", 0.00002f);
     shaderProgram.setFloatUniform("lAmbient", 0.20f);
+
+
+    editor.shadowTexture = shadowMap.depthMap;
+
 
     while (!glfwWindowShouldClose(window)) {
 
-        //lightPos = lightManager.getLightPosition(sceneManager.getCurrentScene(), temp);
         // Error checking
         GLenum err;
         if ((err = glGetError()) != GL_NO_ERROR && showErrors)
@@ -248,31 +247,31 @@ int main() {
             sceneManager.UpdatePhysicsWorld(timeDiff);
         }
 
-        //cubeShadow.updateShadowMap(10000, lightPos, shadowCubeMapProgram, 1024, 1024);
-        //cubeShadow.RenderPhaseBegin(shadowMapWidth, shadowMapHeight);
+        // First update shadow projection
 
-        //sceneManager.renderCurrentScene(shadowCubeMapProgram, camera);
+        shadowMap.prepareRender(camera, sun);
+        sceneManager.renderCurrentScene(shadowMap.shadowMapShader, camera);
+        shadowMap.unprepareRender(width, height);
 
-        //cubeShadow.RenderPhaseEnd(width, height);
+
 
         // Normal Render Loop
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glClearColor(0.1, 0.5, 0.6, 1);
-        if (!editor.visible) {
-            camera.Inputs(window);
-        }
 
-        camera.updateMatrix(45.0f, 0.1f, 1000.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //if (!editor.visible) {
+        //
+        //}
+        camera.Inputs(window);
+
         lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
-
-        //cubeShadow.UpdateShader(shaderProgram, farPlane, lightPos);
+        shadowMap.updateShader(shaderProgram, sun);
 
         sceneManager.renderCurrentScene(shaderProgram, camera);
 
         ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
 
 
-        //skybox.Render(camera, width, height, gamma);
+        skybox.Render(camera, width, height, gamma);
 
         // Init imgui
         ImGui_ImplOpenGL3_NewFrame();
@@ -283,6 +282,8 @@ int main() {
 
 
         editor.Render(sceneManager, lightManager, window, shaderProgram, outline, camera, window_width, window_height, EditorMode::debug);
+
+
 
         //Imgui render
         ImGui::Render();
@@ -300,11 +301,11 @@ int main() {
     skybox.Delete();
     lightManager.Delete();
     shaderProgram.Delete();
-    shadowCubeMapProgram.Delete();
+    shadowMap.Delete();
     sceneManager.Delete();
     lDebugRenderer.Delete();
     glfwDestroyWindow(window);
     glfwTerminate();
-    shadowCubeMapProgram.Delete();
     return 0;
 }
+

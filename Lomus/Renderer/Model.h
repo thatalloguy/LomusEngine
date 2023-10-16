@@ -45,7 +45,7 @@ public:
     }
 
     // draws the model, and thus all its meshes
-    void Draw(Shader &shader, Camera& camera, glm::mat4& matrix,
+    void Draw(Shader &shader, Lomus::Camera& camera, glm::mat4& matrix,
               glm::vec3& translation,
               glm::quat& rotation,
               glm::vec3& scale)

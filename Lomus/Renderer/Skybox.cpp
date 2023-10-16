@@ -71,7 +71,7 @@ void Skybox::Init()
 	glUniform1i(glGetUniformLocation(skyboxShader.ID, "skybox"), 0);
 }
 
-void Skybox::Render(Camera camera, float width, float height, float gamma)
+void Skybox::Render(Lomus::Camera camera, float width, float height, float gamma)
 {
 	glDepthFunc(GL_LEQUAL);
 

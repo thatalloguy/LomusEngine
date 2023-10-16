@@ -54,7 +54,7 @@ GameObject& SceneManager::getGameobject(int id)
 
 }
 
-void SceneManager::renderCurrentScene(Shader& shader, Camera& camera)
+void SceneManager::renderCurrentScene(Shader& shader, Lomus::Camera& camera)
 {
 	for (auto& gameObject : currentScene.gameObjects) {
 		gameObject.second.Draw(shader, camera);
@@ -142,4 +142,3 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp)
 		}
 	}
 }
-

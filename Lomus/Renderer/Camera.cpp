@@ -1,16 +1,16 @@
 #include "Camera.h"
 
-Camera::Camera(int width, int height, glm::vec3 position)
+Lomus::Camera::Camera(int width, int height, glm::vec3 position)
 {
 	Camera::width = width;
 	Camera::height = height;
 	Position = position;
+    view = glm::mat4(1.0f);
+    projection = glm::mat4(1.0f);
 }
 
-void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
+void Lomus::Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
 {
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 projection = glm::mat4(1.0f);
 
     view = glm::lookAt(Position, Position + Orientation, Up);
     projection = glm::perspective(glm::radians(FOVdeg), (float)(width / height), nearPlane, farPlane);
@@ -18,12 +18,12 @@ void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
 }
 
 
-void Camera::Matrix(Shader& shader, const char* uniform)
+void Lomus::Camera::Matrix(Shader& shader, const char* uniform)
 {
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
-void Camera::Inputs(GLFWwindow* window)
+void Lomus::Camera::Inputs(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		Position += speed * Orientation;
@@ -87,4 +87,13 @@ void Camera::Inputs(GLFWwindow* window)
 		firstClick = true;
 	}
 
+}
+
+void Lomus::Camera::Lookat(glm::vec3 position, float FOV, float nearPlane, float farPlane) {
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+
+    view = glm::lookAt(Position, position, Up);
+    projection = glm::perspective(glm::radians(FOV), (float)(width / height), nearPlane, farPlane);
+    cameraMatrix = projection * view;
 }

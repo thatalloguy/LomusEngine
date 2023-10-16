@@ -14,6 +14,7 @@
 #include <vector>
 using namespace std;
 
+
 #define MAX_BONE_INFLUENCE 4
 
 struct Vertex {
@@ -50,20 +51,14 @@ public:
     }
 
     // render the mesh
-    void Draw(Shader &shader, Camera& camera,
+    void Draw(Shader &shader, Lomus::Camera& camera,
               glm::mat4& matrix,
               glm::vec3& translation,
               glm::quat& rotation,
               glm::vec3& scale)
     {
-        // bind appropriate textures
-        unsigned int diffuseNr  = 1;
-        unsigned int specularNr = 1;
-        unsigned int normalNr   = 1;
-        unsigned int heightNr   = 1;
         for(unsigned int i = 0; i < textures.size(); i++)
         {
-
             glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
 
             // retrieve texture number (the N in diffuse_textureN)
@@ -79,6 +74,21 @@ public:
         camera.Matrix(shader, "camMatrix");
 
         // Initialize matrices
+
+
+
+        GLint transLoc = glGetUniformLocation(shader.ID, "translation");
+        GLint rotLoc = glGetUniformLocation(shader.ID, "rotation");
+        GLint scaleLoc = glGetUniformLocation(shader.ID, "scale");
+        GLint modelLoc = glGetUniformLocation(shader.ID, "model");
+
+        if (modelLoc == -1) {
+            scale.z *= -1.0;
+            translation.x *= -1.0;
+            translation.z *= -1.0;
+        }
+
+
         glm::mat4 trans = glm::mat4(1.0f);
         glm::mat4 rot = glm::mat4(1.0f);
         glm::mat4 sca = glm::mat4(1.0f);
@@ -89,10 +99,10 @@ public:
         rot = glm::mat4_cast(rotation);
         sca = glm::scale(sca, scale);
 
-        glUniformMatrix4fv(glGetUniformLocation(shader.ID, "translation"), 1, GL_FALSE, glm::value_ptr(trans));
-        glUniformMatrix4fv(glGetUniformLocation(shader.ID, "rotation"), 1, GL_FALSE, glm::value_ptr(rot));
-        glUniformMatrix4fv(glGetUniformLocation(shader.ID, "scale"), 1, GL_FALSE, glm::value_ptr(sca));
-        glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(matrix));
+        glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans));
+        glUniformMatrix4fv(scaleLoc, 1, GL_FALSE, glm::value_ptr(sca));
+        glUniformMatrix4fv(rotLoc, 1, GL_FALSE, glm::value_ptr(rot));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(matrix));
 
         // draw mesh
         glBindVertexArray(VAO);

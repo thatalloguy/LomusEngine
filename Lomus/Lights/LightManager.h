@@ -11,7 +11,9 @@ using namespace  Lomus;
 namespace Lomus {
 
     struct Light {
-        float lightPosition[3];
+        float lightPosition_x;
+        float lightPosition_y;
+        float lightPosition_z;
         float lightColor_r;
         float lightColor_g;
         float lightColor_b;
@@ -20,6 +22,7 @@ namespace Lomus {
         float lightAngle[3];
         int lightType;
         std::string name;
+        bool castShadow;
     };
 
 }
@@ -31,22 +34,18 @@ public:
 	void Delete();
 	void createNewLight(Scene& scene, Light& light);
 
-	glm::vec3 getLightPosition(Scene& scene, string& id);
-	glm::vec4 getLightColor(Scene& scene, string& id);
-	float     getLightInten(Scene& scene, string& id);
-	
-	void setLightPosition(Scene& scene, string id, glm::vec3& newPosition);
-	void setLightColor(Scene& scene, string& id,    glm::vec4&    newColor);
-	void setLightInten(Scene& scene, string& id,    float        newInten);
+
+    Light& getLight(Scene& scene, std::string name);
 
 	void updateShader(Shader& shader, Scene& scene);
 
 	void deleteLight(Scene& scene, string& id);
 
-    Light lights[100];
+
     int placeId = 0;
+    unordered_map<string, unordered_map<string, Light&>> lightIdMap;
 private:
-    unordered_map<string, unordered_map<string,int>> lightIdMap;
+
 	bool castShadow = false;
 	Light currentShadowCaster;
 

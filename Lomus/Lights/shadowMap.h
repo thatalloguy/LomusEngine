@@ -9,37 +9,35 @@
 #include<glm/gtx/vector_angle.hpp>
 
 #include "../Shader/ShaderClass.h"
+#include "LightManager.h"
 
-class shadowMap
+class ShadowMap
 {
 public:
 
 	void init(unsigned int width = 2048, unsigned int height = 2048);
 
-	void setLight(glm::vec3& lightPos, glm::vec3& lightDirection);
+    void prepareRender(Camera& camera, Light& light);
+    void unprepareRender(int width, int height);
 
-	void prepareRender();
-	void unprepareRender(float screenWidth, float screenHeight);
-	void Delete();
+    void updateShader(Shader& shader, Light& light);
 
-    void updateShader(Shader& shader);
+    void Delete();
 
-	void renderShadowBuffer(int width, int height);
+    unsigned int depthMap;
 
-	glm::mat4 lightProjection;
-	unsigned int my_shadowMap;
 	Shader shadowMapShader{"../../Lomus/Shader/shaders/shadowMap.vert", "../../Lomus/Shader/shaders/shadowMap.frag"};
 private:
-	unsigned int shadowMapFBO;
+    unsigned int depthMapFBO;
+    vector<glm::vec4> corners;
 	unsigned int shadowMapWidth;
 	unsigned int shadowMapHeight;
+    glm::mat4 lightProjection, lightView;
+    glm::mat4 lightSpaceMatrix;
 
 
-	void initShader();
-
-	glm::mat4 orthgonalProjection;
-	glm::mat4 lightView;
-
+    float near_plane = -200, far_plane = 20;
+    float area = 200;
 
 	
 
@@ -48,16 +46,17 @@ private:
 class cubeShadowMap {
 
 public:
-	void Init(int shadowMapWidth, int shadowMapHeight, float farPlane, glm::vec3& lightPos, Shader& cubeMapShadowShader);
+	void Init(int shadowMapWidth, int shadowMapHeight, float farPlane,  Light& shadowCaster, Shader& cubeMapShadowShader);
 	void RenderPhaseBegin(int shadowMapWidth, int shadowMapHeight);
 	void RenderPhaseEnd(float windowWidth, float windowHeight);
-	void UpdateShader(Shader& DefaultShader, float farPlane, glm::vec3& lightPos);
+	void UpdateShader(Shader& DefaultShader, float farPlane, Light& shadowCaster);
 	void Delete();
-	void updateShadowMap(float farPlane, glm::vec3& lightPos, Shader& shadowCubeMapProgram, int shadowMapWidth, int shadowMapHeight);
+	void updateShadowMap(float farPlane, Light& shadowCaster, Shader& shadowCubeMapProgram, int shadowMapWidth, int shadowMapHeight);
 
     int renderShadow;
 
 private:
+    glm::vec3 reUseVec{0, 0, 0};
 	unsigned int pointShadowMapFBO;
 	unsigned int depthCubemap;
 };

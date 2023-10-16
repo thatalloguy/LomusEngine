@@ -117,41 +117,72 @@ void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager&
         ImGui::BeginTabBar("General");
 
         if (ImGui::BeginTabItem("Lights")) {
-            for (int i=0; i < lightManager.placeId; i++) {
-                std::string temp = "Light: " + std::to_string(i);
+            int i = 0;
+            for (auto l : lightManager.lightIdMap.at(sceneManager.currentScene.name)) {
+                Light& light = l.second;
+                std::string temp = "Light: " + light.name;
 
                 if (ImGui::TreeNode(temp.c_str())) {
-
+                    float sd[3] = {light.lightPosition_x, light.lightPosition_y, light.lightPosition_z};
                     ImGui::Text("Position:");
                     ImGui::PushID(temp.c_str());
-                    ImGui::DragFloat3("", lightManager.lights[i].lightPosition, 0.5f, 5.0f);
+                    ImGui::DragFloat3("", sd, 0.5f, 5.0f);
                     ImGui::PopID();
+                    light.lightPosition_x = sd[0];
+                    light.lightPosition_y = sd[1];
+                    light.lightPosition_z = sd[2];
+
+
 
                     ImGui::Spacing();
 
-                    float v[4] = {lightManager.lights[i].lightColor_r,lightManager.lights[i].lightColor_g,lightManager.lights[i].lightColor_b,lightManager.lights[i].lightColor_a};
+                    float v[4] = {light.lightColor_r,light.lightColor_g,light.lightColor_b,light.lightColor_a};
                     temp = "col" + std::to_string(i);
 
                     ImGui::Text("Color:");
                     ImGui::PushID(temp.c_str());
                     ImGui::DragFloat4("", v, 0.1f, 0.0f, 1.0f);
                     ImGui::PopID();
-                    lightManager.lights[i].lightColor_r = v[0];
-                    lightManager.lights[i].lightColor_g = v[1];
-                    lightManager.lights[i].lightColor_b = v[2];
-                    lightManager.lights[i].lightColor_a = v[3];
+                    light.lightColor_r = v[0];
+                    light.lightColor_g = v[1];
+                    light.lightColor_b = v[2];
+                    light.lightColor_a = v[3];
 
                     ImGui::Spacing();
 
                     temp = "inten" + std::to_string(i);
                     ImGui::Text("Inten");
-                    float s[1] = {lightManager.lights[i].lightInten};
+                    float s[1] = {light.lightInten};
                     ImGui::PushID(temp.c_str());
                     ImGui::DragFloat("", s, 0.1f, 0.0f);
                     ImGui::PopID();
-                    lightManager.lights[i].lightInten = *s;
+                    light.lightInten = *s;
+
+                    if (light.lightType == 1) {
+                        temp = "angle" + std::to_string(i);
+                        ImGui::Text("Angle:");
+                        ImGui::PushID(temp.c_str());
+                        ImGui::DragFloat3("", light.lightAngle, 0.01f, -2.0f);
+                        ImGui::PopID();
+                    }
+
                     ImGui::TreePop();
                 }
+                i++;
+            }
+
+
+            if (ImGui::TreeNode("Shadow Textures")) {
+
+                ImGui::Text("Sun Shadow map:");
+
+                ImTextureID imTexID = (void*)(intptr_t)shadowTexture;
+
+                // Display the texture using ImGui::Image
+                ImGui::Image(imTexID, ImVec2(static_cast<float>(200), static_cast<float>(200)));
+
+
+                ImGui::TreePop();
             }
             ImGui::EndTabItem();
         }
@@ -171,11 +202,21 @@ void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager&
                     temp = gameObject.second.name + "Pos";
                     ImGui::PushID(temp.c_str());
                     float v[3] = {gameObject.second.position.x, gameObject.second.position.y, gameObject.second.position.z};
-                    ImGui::DragFloat3("", v, 0.5f, -20);
+                    ImGui::DragFloat3("", v, 0.5f, -20, 20);
                     ImGui::PopID();
                     gameObject.second.position.x = v[0];
                     gameObject.second.position.y = v[1];
                     gameObject.second.position.z = v[2];
+
+                    ImGui::Text("Scale: ");
+                    temp = gameObject.second.name + "Sac";
+                    ImGui::PushID(temp.c_str());
+                    float s[3] = {gameObject.second.scale.x, gameObject.second.scale.y, gameObject.second.scale.z};
+                    ImGui::DragFloat3("", s, 0.5f, -20, 20);
+                    ImGui::PopID();
+                    gameObject.second.scale.x = s[0];
+                    gameObject.second.scale.y = s[1];
+                    gameObject.second.scale.z = s[2];
 
                     ImGui::TreePop();
                 }

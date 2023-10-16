@@ -1,5 +1,4 @@
-#ifndef SHADER_CLASS_H
-#define SHADER_CLASS_H
+
 #pragma once
 
 #include <string>
@@ -8,7 +7,9 @@
 #include <iostream>
 #include <cerrno>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
+#include <glm/gtc/type_ptr.hpp>
 std::string get_file_contents(const char* filename);
 
 class Shader
@@ -25,6 +26,7 @@ public:
 	void setVec3Uniform(const char* name, float x, float y, float z);
 	void setVec4Uniform(const char* name, float x, float y, float z, float w);
 	void setFloatUniform(const char* name, float f);
+    void setMat4Uniform(const char* name, glm::mat4& matrix);
 
 	GLuint getUniformLocation(const char* name);
 
@@ -46,5 +48,3 @@ private:
 	void compileErrors(unsigned int shader, const char* type);
 };
 
-
-#endif

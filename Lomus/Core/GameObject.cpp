@@ -17,7 +17,7 @@ void GameObject::createModel(std::string const& path)
 }
 
 
-void GameObject::Draw(Shader& defaultShader, Camera& camera)
+void GameObject::Draw(Shader& defaultShader, Lomus::Camera& camera)
 {
 	model.Draw(defaultShader, camera, matrix, position, rotation, scale);
 }
