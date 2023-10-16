@@ -47,13 +47,14 @@ uniform sampler2D texture_normal0;
 
 void main()
 {
+
+	mat4 model = mat4(1.0);
 	vec3 T = normalize(vec3(model * vec4(aTangent,   0.0)));
 	vec3 B = normalize(vec3(model * vec4(aBitangent, 0.0)));
 	vec3 N = normalize(vec3(model * vec4(aNormal,    0.0)));
 	TBN = mat3(T, B, N);
 
 	//TBN = transpose(TBN);
-
 	fragPos = vec3(model * vec4(aPos, 1.0));
 	// calculates current position
 	crntPos = vec3(model * translation * -rotation * scale * vec4(aPos, 1.0f));

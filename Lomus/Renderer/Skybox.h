@@ -12,7 +12,7 @@ class Skybox
 {
 public:
 	void Init();
-	void Render(Camera camera, float width, float height, float gamma);
+	void Render(Lomus::Camera camera, float width, float height, float gamma);
 	void Delete();
 	
 	void setSkyboxImageLocation(std::string path);

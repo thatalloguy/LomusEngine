@@ -7,6 +7,19 @@ namespace Lomus {
 
     class Keyboard {
 
+
+    protected:
+        Keyboard() = default;
+
+    public:
+        static Keyboard& getInstance();
+
+
+        Keyboard(const Keyboard&) = delete;
+        Keyboard(Keyboard&&) = delete;
+        Keyboard& operator=(const Keyboard&) = delete;
+        Keyboard& operator=(Keyboard&&) = delete;
+
         enum Key{
             Q = GLFW_KEY_Q,
             W = GLFW_KEY_W,
@@ -73,20 +86,10 @@ namespace Lomus {
         };
 
 
-    protected:
-        Keyboard() = default;
-
-    public:
-        static Keyboard& getInstance();
-
-
-        Keyboard(const Keyboard&) = delete;
-        Keyboard(Keyboard&&) = delete;
-        Keyboard& operator=(const Keyboard&) = delete;
-        Keyboard& operator=(Keyboard&&) = delete;
-
 
         bool isKeyPressed(GLFWwindow* window, Key key);
+
+
 
 
     private:

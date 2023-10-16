@@ -1,5 +1,10 @@
 #include"shaderClass.h"
 
+
+class mat4;
+
+class mat4;
+
 // Reads a text file and outputs a string with everything in the text file
 std::string get_file_contents(const char* filename)
 {
@@ -120,27 +125,38 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile, const char* geo
 
 void Shader::setIntUniform(const char* name, int value)
 {
+
 	glUniform1i(glGetUniformLocation(ID, name), value);
 }
 
 void Shader::setVec3Uniform(const char* name, float x, float y, float z)
 {
+
 	glUniform3f(glGetUniformLocation(ID, name), x, y, z);
 }
 
 void Shader::setVec4Uniform(const char* name, float x, float y, float z, float w)
 {
+
 	glUniform4f(glGetUniformLocation(ID, name), x, y, z, w);
 }
 
 void Shader::setFloatUniform(const char* name, float f) {
+
     glUniform1f(glGetUniformLocation(ID, name), f);
 }
+
+
+void Shader::setMat4Uniform(const char *name, glm::mat4& matrix) {
+    glUniformMatrix4fv(glGetUniformLocation(ID, name), 1, GL_FALSE, glm::value_ptr(matrix));
+}
+
 
 
 
 GLuint Shader::getUniformLocation(const char* name)
 {
+
 	return glGetUniformLocation(ID, name);
 }
 

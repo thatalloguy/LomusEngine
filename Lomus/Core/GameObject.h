@@ -27,7 +27,7 @@ public:
 	void createModel(std::string const& path);
 	void createModel(std::string const& path, std::map<std::string, std::string>& textures);
 
-	void Draw(Shader& defaultShader, Camera& camera);
+	void Draw(Shader& defaultShader, Lomus::Camera& camera);
 
 	void Delete();
 	void DeletePhysicsData(PhysicsCommon& common);
