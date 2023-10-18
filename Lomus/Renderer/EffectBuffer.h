@@ -1,0 +1,8 @@
+
+namespace Lomus {
+
+    class EffectBuffer {
+
+    };
+
+}

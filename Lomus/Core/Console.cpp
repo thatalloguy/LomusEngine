@@ -134,6 +134,7 @@ void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& c
         ImGui::PushID(340);
         const char* d = "";
         ImGui::SetCursorPosY(height - 30.0);
+        ImGui::SetNextItemWidth(width * 0.9);
         ImGui::InputText(d, &commandBuffer);
         ImGui::PopID();
         ImGui::SameLine();

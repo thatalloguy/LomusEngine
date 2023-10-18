@@ -27,7 +27,7 @@ namespace Lomus {
         float sensitivity = 100.0f;
 
         Camera(int width, int height, glm::vec3 position);
-        void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
+        void updateMatrix(float FOVdeg, float nearPlane, float farPlane, float nWidth, float nHeight);
         void Matrix(Shader& shader, const char* uniform);
         void Inputs(GLFWwindow* window);
         void Lookat(glm::vec3 position, float FOV, float nearPlane, float farPlane);

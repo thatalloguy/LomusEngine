@@ -9,11 +9,11 @@ Lomus::Camera::Camera(int width, int height, glm::vec3 position)
     projection = glm::mat4(1.0f);
 }
 
-void Lomus::Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
+void Lomus::Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane, float nWidth, float nHeight)
 {
 
     view = glm::lookAt(Position, Position + Orientation, Up);
-    projection = glm::perspective(glm::radians(FOVdeg), (float)(width / height), nearPlane, farPlane);
+    projection = glm::perspective(glm::radians(FOVdeg), (float)(nWidth / nHeight), nearPlane, farPlane);
     cameraMatrix = projection * view;
 }
 

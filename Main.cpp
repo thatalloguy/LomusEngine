@@ -36,6 +36,20 @@
 using namespace Lomus;
 int width;
 int height;
+unsigned int samples = 8;
+
+float rectangleVertices[] =
+        {
+                //  Coords   // texCoords
+                1.0f, -1.0f,  1.0f, 0.0f,
+                -1.0f, -1.0f,  0.0f, 0.0f,
+                -1.0f,  1.0f,  0.0f, 1.0f,
+
+                1.0f,  1.0f,  1.0f, 1.0f,
+                1.0f, -1.0f,  1.0f, 0.0f,
+                -1.0f,  1.0f,  0.0f, 1.0f
+        };
+
 
 static bool GLLogCall(const char* function, const char* file, int line) {
     while (GLenum error = glGetError()) {
@@ -108,6 +122,10 @@ int main() {
     //Camera and init of shaders
 
     Shader shaderProgram("../../Lomus/Shader/shaders/default.vert", "../../Lomus/Shader/shaders/default.frag");
+    Shader framebufferProgram("../../Lomus/Shader/shaders/framebuffer.vert", "../../Lomus/Shader/shaders/framebuffer.frag");
+    framebufferProgram.Activate();
+    glUniform1i(glGetUniformLocation(framebufferProgram.ID, "screenTexture"), 0);
+    glUniform1f(glGetUniformLocation(framebufferProgram.ID, "gamma"), 2.2f);
 
 
     shaderProgram.Activate();
@@ -199,8 +217,7 @@ int main() {
 
 
     /// EDITORRR
-    Lomus::Editor editor;
-    editor.Init(sceneManager);
+    Lomus::Editor editor(window);
 
 
     std::string temp = "light1";
@@ -217,6 +234,7 @@ int main() {
 
 
     editor.shadowTexture = shadowMap.depthMap;
+
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -249,18 +267,14 @@ int main() {
 
         // First update shadow projection
 
-        shadowMap.prepareRender(camera, sun);
+        shadowMap.prepareRender(camera, sun, editor.windowWidth[0] * 0.745f, editor.windowHeight[0] * 0.745f);
         sceneManager.renderCurrentScene(shadowMap.shadowMapShader, camera);
-        shadowMap.unprepareRender(width, height);
+        shadowMap.unprepareRender(editor.windowWidth[0], editor.windowHeight[0]);
 
 
 
-        // Normal Render Loop
+        editor.prepareFrameBuffer();
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //if (!editor.visible) {
-        //
-        //}
         camera.Inputs(window);
 
         lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
@@ -270,8 +284,9 @@ int main() {
 
         ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
 
-
         skybox.Render(camera, width, height, gamma);
+
+        editor.unprepareFrameBuffer();
 
         // Init imgui
         ImGui_ImplOpenGL3_NewFrame();
@@ -281,9 +296,7 @@ int main() {
 
 
 
-        editor.Render(sceneManager, lightManager, window, shaderProgram, outline, camera, window_width, window_height, EditorMode::debug);
-
-
+        editor.Render(sceneManager, lightManager, camera, EditorMode::editor);
 
         //Imgui render
         ImGui::Render();
@@ -308,4 +321,3 @@ int main() {
     glfwTerminate();
     return 0;
 }
-

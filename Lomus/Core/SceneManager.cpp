@@ -50,8 +50,6 @@ GameObject& SceneManager::getGameobject(int id)
     }
 
 
-
-
 }
 
 void SceneManager::renderCurrentScene(Shader& shader, Lomus::Camera& camera)

@@ -17,7 +17,7 @@ public:
 
 	void init(unsigned int width = 2048, unsigned int height = 2048);
 
-    void prepareRender(Camera& camera, Light& light);
+    void prepareRender(Camera& camera, Light& light, float resoWidth, float resoHeight);
     void unprepareRender(int width, int height);
 
     void updateShader(Shader& shader, Light& light);
