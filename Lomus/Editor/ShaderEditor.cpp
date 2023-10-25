@@ -70,8 +70,9 @@ void Lomus::ShaderEditor::DrawNodeAreaWindow() {
     ImGui::Begin("Hello!");
 
     if (ImGui::Button("Run")) {
-        std::cout << testMulNode->GetData() << "\n";
+        curOut = "Output: "  + std::to_string(testMulNode->GetData());
     }
+    ImGui::Text(curOut.c_str());
 
     ImGui::End();
 

@@ -25,6 +25,8 @@ namespace Lomus {
         LomusNodes::FloatNode* testFloatNode;
         LomusNodes::FloatNode* testFloatNode2;
         LomusNodes::MulNode* testMulNode;
+
+        std::string curOut = "Output: ";
     };
 
 

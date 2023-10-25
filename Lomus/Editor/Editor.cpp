@@ -1110,7 +1110,7 @@ bool Editor::allowCameraInput() {
     float sceneViewWidth = windowWidth[0] * 0.75f;
     float sceneViewHeight = windowHeight[0] * 0.65f;
 
-    return (mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
+    return false;//(mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
 }
 
 void Editor::handleInputs(Camera &camera) {

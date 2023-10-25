@@ -27,7 +27,7 @@ FloatNode::FloatNode() : Node()
     SetStyle(DEFAULT);
 
     SetSize(ImVec2(250, 120));
-    SetName("FloatNode (" + this->GetID() + ")");
+    SetName("FloatNode");
 
     TitleBackgroundColor = ImColor(128, 117, 208);
     TitleBackgroundColorHovered = ImColor(135, 145, 255);
