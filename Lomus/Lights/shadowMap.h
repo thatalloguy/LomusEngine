@@ -26,6 +26,9 @@ public:
 
     unsigned int depthMap;
 
+    float near_plane = -200, far_plane = 20;
+    float area = 200;
+
 	Shader shadowMapShader{"../../Lomus/Shader/shaders/shadowMap.vert", "../../Lomus/Shader/shaders/shadowMap.frag"};
 private:
     unsigned int depthMapFBO;
@@ -36,8 +39,6 @@ private:
     glm::mat4 lightSpaceMatrix;
 
 
-    float near_plane = -200, far_plane = 20;
-    float area = 200;
 
 	
 

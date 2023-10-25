@@ -1,10 +1,14 @@
-
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <iostream>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <stdio.h>
+
+//Imgui
+#include "Thirdparty/imgui/imgui_impl_glfw.h"
+#include "Thirdparty/imgui/imgui_impl_opengl3.h"
 
 #include <reactphysics3d/reactphysics3d.h>
 #include "Libs/Include/stb/std_image.h"
@@ -28,10 +32,6 @@
 
 #include "Lomus/Editor/Editor.h"
 
-//Imgui
-#include "Thirdparty/imgui/imgui.h"
-#include "Thirdparty/imgui/imgui_impl_glfw.h"
-#include "Thirdparty/imgui/imgui_impl_opengl3.h"
 
 using namespace Lomus;
 int width;
@@ -113,6 +113,13 @@ int main() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.Fonts->AddFontDefault();
+
+    ImFontConfig config;
+    config.MergeMode = true;
+    config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+    static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    io.Fonts->AddFontFromFileTTF("../../Lomus/Resources/Font/forkawesome-webfont.ttf", 13.0f, &config, icon_ranges);
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
@@ -217,7 +224,7 @@ int main() {
 
 
     /// EDITORRR
-    Lomus::Editor editor(window);
+    Lomus::Editor editor(window, Lomus::Editor::Clean);
 
 
     std::string temp = "light1";
@@ -232,7 +239,7 @@ int main() {
 
     shaderProgram.setFloatUniform("lAmbient", 0.20f);
 
-
+    glm::mat4 gridModel;
     editor.shadowTexture = shadowMap.depthMap;
 
 
@@ -266,6 +273,9 @@ int main() {
         }
 
         // First update shadow projection
+        shadowMap.area       = editor.shadowArea[0];
+        shadowMap.near_plane = editor.shadowNearPlane[0];
+        shadowMap.far_plane  = editor.shadowFarPlane[0];
 
         shadowMap.prepareRender(camera, sun, editor.windowWidth[0] * 0.745f, editor.windowHeight[0] * 0.745f);
         sceneManager.renderCurrentScene(shadowMap.shadowMapShader, camera);
@@ -274,17 +284,20 @@ int main() {
 
 
         editor.prepareFrameBuffer();
-
-        camera.Inputs(window);
+        if (editor.allowCameraInput()) {
+            camera.Inputs(window, (editor.windowWidth[0] * 0.75f) / 2, (editor.windowHeight[0] * 0.65f) / 2, timeDiff);
+            ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+        }
 
         lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
         shadowMap.updateShader(shaderProgram, sun);
 
         sceneManager.renderCurrentScene(shaderProgram, camera);
 
-        ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
-
+        ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics)
         skybox.Render(camera, width, height, gamma);
+
+
 
         editor.unprepareFrameBuffer();
 
@@ -292,11 +305,15 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
 
 
 
 
-        editor.Render(sceneManager, lightManager, camera, EditorMode::editor);
+
+        editor.Render(sceneManager, lightManager, camera, EditorMode::shader);
+
+
 
         //Imgui render
         ImGui::Render();

@@ -23,43 +23,40 @@ void Lomus::Camera::Matrix(Shader& shader, const char* uniform)
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
-void Lomus::Camera::Inputs(GLFWwindow* window)
+void Lomus::Camera::Inputs(GLFWwindow* window, float lockX, float lockY, float deltaTime)
 {
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		Position += speed * Orientation;
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		Position += speed * -glm::normalize(glm::cross(Orientation, Up));
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		Position += speed * -Orientation;
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		Position += speed * glm::normalize(glm::cross(Orientation, Up));
-	}
+    float speed = Speed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        Position += speed * Orientation;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        Position += speed * -glm::normalize(glm::cross(Orientation, Up));
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        Position += speed * -Orientation;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        Position += speed * glm::normalize(glm::cross(Orientation, Up));
+    }
 
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		Position += speed * Up;
-	}
-	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-		Position += speed * -Up;
-	}
-
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-		speed = 0.4f;
-	}
-	else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) {
-		speed = 0.1f;
-	}
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        Position += speed * Up;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+        Position += speed * -Up;
+    }
 
 
 
-	//Mouseee
+
+
+
+    //Mouseee
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 		if (firstClick) {
-			glfwSetCursorPos(window, (width / 2), (height / 2));
+			glfwSetCursorPos(window, lockX, lockY);
 			firstClick = false;
 		}
 
@@ -87,13 +84,25 @@ void Lomus::Camera::Inputs(GLFWwindow* window)
 		firstClick = true;
 	}
 
+
 }
 
 void Lomus::Camera::Lookat(glm::vec3 position, float FOV, float nearPlane, float farPlane) {
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection = glm::mat4(1.0f);
 
-    view = glm::lookAt(Position, position, Up);
+    view = glm::lookAt(Position, position + Front, Up);
     projection = glm::perspective(glm::radians(FOV), (float)(width / height), nearPlane, farPlane);
     cameraMatrix = projection * view;
+}
+
+void Lomus::Camera::updateVectors() {
+    glm::vec3 front;
+    front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+    front.y = sin(glm::radians(Pitch));
+    front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+    Front = glm::normalize(front);
+    // also re-calculate the Right and Up vector
+    Right = glm::normalize(glm::cross(Front, glm::vec3(0, 1, 0)));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+    Up    = glm::normalize(glm::cross(Right, Front));
 }

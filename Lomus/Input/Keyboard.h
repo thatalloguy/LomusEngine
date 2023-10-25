@@ -86,14 +86,16 @@ namespace Lomus {
         };
 
 
-
-        bool isKeyPressed(GLFWwindow* window, Key key);
+        void setCaptureWindow(GLFWwindow* _window) {
+            window = _window;
+        }
+        bool isKeyPressed(Key key);
 
 
 
 
     private:
-
+        GLFWwindow* window;
     };
 
 }
