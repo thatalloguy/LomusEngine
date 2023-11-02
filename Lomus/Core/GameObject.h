@@ -9,6 +9,14 @@
 using namespace std;
 using namespace reactphysics3d;
 
+namespace Lomus{
+    enum RenderPhase{
+        shadow,
+        normal,
+        id
+    };
+}
+
 class GameObject
 {
 public:
@@ -19,7 +27,7 @@ public:
 	
 
 	string name;
-	int id;
+	int id = -1;
 
 	
 	GameObject(glm::vec3 position, glm::quat rotation, glm::vec3 scale, string name);

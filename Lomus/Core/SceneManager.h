@@ -9,7 +9,7 @@
 struct Scene {
 
     std::string name;
-	std::unordered_map<int, GameObject&> gameObjects;
+	std::unordered_map<int, std::shared_ptr<GameObject>> gameObjects;
 	PhysicsWorld* world;
 };
 
@@ -19,11 +19,11 @@ public:
 	SceneManager();
 	~SceneManager();
 	void createNewScene(std::string name);
-	void addGameObject(GameObject& gameObject, int id);
+	void addGameObject(GameObject& gameObject);
 	void setCurrentScene(std::string name);
 	void deleteScene(std::string name);
-	Scene &getCurrentScene();
-	GameObject &getGameobject(int id);
+    std::shared_ptr<Scene> getCurrentScene();
+    std::shared_ptr<GameObject> getGameobject(int id);
 
 	void renderCurrentScene(Shader& shader, Lomus::Camera& camera);
 
@@ -36,14 +36,27 @@ public:
 	void addCollisionSphereShape(int GameObjectId, float radius, Transform& Offset);
 	void addCollisionCapsuleShape(int GameObjectId, float radius, float height, Transform& Offset);
 
+    //Mouse picking stuff
+
 	PhysicsCommon common;
 	bool doPhysics = true;
 
-    Scene currentScene;
+    std::shared_ptr<Scene> currentScene;
 	
 
 private:
-	unordered_map<string, Scene> scenes;
+
+    //Mouse picking stuff
+    //void setupIdFramebuffer();
+   // void bindIdFrameBuffer();
+   // void unbindIdFrameBuffer();
+   // void deleteIdFrameBuffer();
+
+    unsigned int FBO;
+    unsigned int FBOTexture;
+
+    int idCounter = 0;
+	unordered_map<string, std::shared_ptr<Scene>> scenes;
 	bool isItFirstScene = true;
     Quaternion tempQuat;
 };

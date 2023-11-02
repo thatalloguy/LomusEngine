@@ -369,15 +369,29 @@ Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style) {
 
     Lomus::Keyboard::getInstance().setCaptureWindow(rawWindow);
     auto& guizmoStyle = ImGuizmo::GetStyle();
-    guizmoStyle.TranslationLineArrowSize = 10.0f;
-    guizmoStyle.TranslationLineThickness = 7.0f;
 
-    guizmoStyle.RotationLineThickness = 7.0f;
-    guizmoStyle.ScaleLineThickness = 7.0f;
-    guizmoStyle.ScaleLineCircleSize = 10.0f;
     
 
     guizmoStyle.HatchedAxisLineThickness = 0;
+
+    // Prepare the color text editor
+    auto lang = TextEditor::LanguageDefinition::GLSL();
+    textEditor.SetLanguageDefinition(lang);
+    std::ifstream in("../../Lomus/Shader/shaders/default.frag", std::ios::binary);
+    if (in)
+    {
+        std::string contents;
+        in.seekg(0, std::ios::end);
+        contents.resize(in.tellg());
+        in.seekg(0, std::ios::beg);
+        in.read(&contents[0], contents.size());
+        in.close();
+        textEditor.SetText(contents);
+    } else {
+        std::cout << "Couldn't load: ../../Lomus/Shader/shaders/default.frag\n";
+        textEditor.SetText("Couldnt load shader file :/\n");
+    }
+
 
 }
 
@@ -390,242 +404,18 @@ void Lomus::Editor::Render(SceneManager& sceneManager, LightManager& lightManage
             renderTheFullEditor(camera, sceneManager, lightManager);
             break;
         case EditorMode::shader:
+
             shaderEditor.Render();
             break;
     }
 }
 
 void Lomus::Editor::Delete(SceneManager &sceneManager) {
+
 }
 
 void Lomus::Editor::renderDebugModeData(SceneManager &sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader, GLFWwindow* window, Camera& camera,  int windowWidth, int windowHeight) {
-    /*
-    if (visible) {
-        ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.3, windowHeight * 0.7));
-        ImGui::Begin("Editor | Mode: debug");
 
-        ImGui::BeginTabBar("General");
-
-        if (ImGui::BeginTabItem("Lights")) {
-            int i = 0;
-            for (auto l : lightManager.lightIdMap.at(sceneManager.currentScene.name)) {
-                Light& light = l.second;
-                std::string temp = "Light: " + light.name;
-
-                if (ImGui::TreeNode(temp.c_str())) {
-                    float sd[3] = {light.lightPosition_x, light.lightPosition_y, light.lightPosition_z};
-                    ImGui::Text("Position:");
-                    ImGui::PushID(temp.c_str());
-                    ImGui::DragFloat3("", sd, 0.5f, 5.0f);
-                    ImGui::PopID();
-                    light.lightPosition_x = sd[0];
-                    light.lightPosition_y = sd[1];
-                    light.lightPosition_z = sd[2];
-
-
-
-                    ImGui::Spacing();
-
-                    float v[4] = {light.lightColor_r,light.lightColor_g,light.lightColor_b,light.lightColor_a};
-                    temp = "col" + std::to_string(i);
-
-                    ImGui::Text("Color:");
-                    ImGui::PushID(temp.c_str());
-                    ImGui::DragFloat4("", v, 0.1f, 0.0f, 1.0f);
-                    ImGui::PopID();
-                    light.lightColor_r = v[0];
-                    light.lightColor_g = v[1];
-                    light.lightColor_b = v[2];
-                    light.lightColor_a = v[3];
-
-                    ImGui::Spacing();
-
-                    temp = "inten" + std::to_string(i);
-                    ImGui::Text("Inten");
-                    float s[1] = {light.lightInten};
-                    ImGui::PushID(temp.c_str());
-                    ImGui::DragFloat("", s, 0.1f, 0.0f);
-                    ImGui::PopID();
-                    light.lightInten = *s;
-
-                    if (light.lightType == 1) {
-                        temp = "angle" + std::to_string(i);
-                        ImGui::Text("Angle:");
-                        ImGui::PushID(temp.c_str());
-                        ImGui::DragFloat3("", light.lightAngle, 0.01f, -2.0f);
-                        ImGui::PopID();
-                    }
-
-                    ImGui::TreePop();
-                }
-                i++;
-            }
-
-
-            if (ImGui::TreeNode("Shadow Textures")) {
-
-                ImGui::Text("Sun Shadow map:");
-
-                ImTextureID imTexID = (void*)(intptr_t)shadowTexture;
-
-                // Display the texture using ImGui::Image
-                ImGui::Image(imTexID, ImVec2(static_cast<float>(200), static_cast<float>(200)));
-
-
-                ImGui::TreePop();
-            }
-            ImGui::EndTabItem();
-        }
-
-
-
-        if (ImGui::BeginTabItem("Entities")) {
-
-
-            Scene& curScene = sceneManager.getCurrentScene();
-            string temp = "";
-            for (auto& gameObject : curScene.gameObjects) {
-                if (ImGui::TreeNode(gameObject.second.name.c_str())) {
-
-                    ImGui::Spacing();
-                    ImGui::Text("Position: ");
-                    temp = gameObject.second.name + "Pos";
-                    ImGui::PushID(temp.c_str());
-                    float v[3] = {gameObject.second.position.x, gameObject.second.position.y, gameObject.second.position.z};
-                    ImGui::DragFloat3("", v, 0.5f, -20, 20);
-                    ImGui::PopID();
-                    gameObject.second.position.x = v[0];
-                    gameObject.second.position.y = v[1];
-                    gameObject.second.position.z = v[2];
-
-                    ImGui::Text("Scale: ");
-                    temp = gameObject.second.name + "Sac";
-                    ImGui::PushID(temp.c_str());
-                    float s[3] = {gameObject.second.scale.x, gameObject.second.scale.y, gameObject.second.scale.z};
-                    ImGui::DragFloat3("", s, 0.5f, -20, 20);
-                    ImGui::PopID();
-                    gameObject.second.scale.x = s[0];
-                    gameObject.second.scale.y = s[1];
-                    gameObject.second.scale.z = s[2];
-
-                    ImGui::TreePop();
-                }
-            }
-
-
-            ImGui::EndTabItem();
-        }
-
-
-
-        if (ImGui::BeginTabItem("Render")) {
-
-                shader.Activate();
-                shader.setFloatUniform("sSamples", shadowSamples[0]);
-                shader.setFloatUniform("sBiases", baises[0]);
-                shader.setFloatUniform("sOffset", offset[0]);
-                shader.setFloatUniform("lAmbient", ambient[0]);
-                shader.setFloatUniform("shadowAmbient", sAmbient[0]);
-                shader.setIntUniform("shadeLevels", celLevel[0]);
-                shader.setIntUniform("useNormalMap", useNM[0]);
-
-
-                outlineShader.Activate();
-                outlineShader.setFloatUniform("thickness", outlineThick[0]);
-                outlineShader.setVec4Uniform("color", outlineColor[0], outlineColor[1], outlineColor[2], outlineColor[3]);
-
-            ImGui::Spacing();
-
-
-            ImGui::Spacing();
-            ImGui::Separator();
-
-            ImGui::Text("Shadows: ");
-            ImGui::Spacing();
-            ImGui::Text("Samples:");
-            ImGui::PushID("samp");
-            ImGui::DragFloat("",Editor::shadowSamples, 0.1f, 1.0f, 10.0f);
-            ImGui::PopID();
-
-            ImGui::Text("Baise:");
-            ImGui::PushID("bas");
-            ImGui::DragFloat("", Editor::baises, 1.0f, 1.0f, 100.0f);
-            ImGui::PopID();
-
-            ImGui::Text("Offset:");
-            ImGui::PushID("ofs");
-            ImGui::DragFloat("", Editor::offset, 0.5f, 1.0f, 100.0f);
-            ImGui::PopID();
-
-            ImGui::Text("Shadow Ambient:");
-            ImGui::PushID("sA");
-            ImGui::DragFloat("", Editor::sAmbient, 0.01f, 0.01f, 3.0f);
-            ImGui::PopID();
-
-
-            ImGui::Separator();
-            ImGui::Spacing();
-            ImGui::Text("Ambient");
-            ImGui::PushID("am");
-            ImGui::DragFloat("", Editor::ambient, 0.01f, 0.01f, 1.0f);
-            ImGui::PopID();
-
-            ImGui::Separator();
-            ImGui::Spacing();
-            ImGui::Text("Toon shader");
-            ImGui::Spacing();
-            ImGui::Text("Cel Levels");
-            ImGui::PushID("cl");
-            ImGui::DragInt("", Editor::celLevel, 1, 1, 20);
-            ImGui::PopID();
-            ImGui::Text("Use Normal Maps");
-            ImGui::PushID("uNM");
-            ImGui::Checkbox("", Editor::useNM);
-            ImGui::PopID();
-
-            ImGui::Spacing();
-            ImGui::Text("Outline Width:");
-            ImGui::PushID("oT");
-            ImGui::DragFloat("", Editor::outlineThick, 0.01f, 0.01f, 1);
-            ImGui::PopID();
-            ImGui::Text("Outline Color");
-            ImGui::PushID("oC");
-            ImGui::DragFloat4("", Editor::outlineColor, 0.01f, 0, 1);
-            ImGui::PopID();
-
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem("Console")) {
-            mConsole.renderConsole(window, 400, 500, camera, sceneManager, Lomus::ConsoleMode::intergrated);
-            ImGui::EndTabItem();
-        }
-
-
-
-        ImGui::EndTabBar();
-
-        ImGui::End();
-
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && togglePressed) {
-
-            visible = 0;
-            togglePressed = false;
-        }
-        else if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_RELEASE) {
-            togglePressed = true;
-        }
-    } else if (!visible) {
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && togglePressed) {
-
-            visible = 1;
-            togglePressed = false;
-        }
-        else if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_RELEASE) {
-            togglePressed = true;
-        }
-    }
-    */
 }
 
 void Editor::setShader(int name, Shader &shader) {
@@ -647,9 +437,22 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
     oldWindowWidth = windowWidth[0];
     ImGui::SetNextWindowPos(ImVec2(0,0));
     ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f,oldWindowHeight * 0.65f));
-    ImGui::Begin(ICON_FA_TABLE_CELLS_LARGE " Scene preview", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin(ICON_FA_TABLE_CELLS_LARGE " Windows", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::BeginTabBar("Bigboi's");
+
+
     imTexID = (void*)(intptr_t)texture_id;
-    ImGui::Image(imTexID, ImVec2(static_cast<float>(oldWindowWidth * 0.745f), static_cast<float>(oldWindowHeight * 0.65f)),ImVec2(0, 1), ImVec2(1, 0));
+
+    if (ImGui::BeginTabItem("Scene")) {
+        ImGui::Image(imTexID, ImVec2(static_cast<float>(oldWindowWidth * 0.745f), static_cast<float>(oldWindowHeight * 0.65f)),ImVec2(0, 1), ImVec2(1, 0));
+        currentSceneState = SceneState::world;
+        ImGui::EndTabItem();
+    }
+
+
+
+    ImGui::EndTabBar();
+
 
     if (currentId != -1) {
         manipulateGameObjectViaGizmo(sceneManager.getGameobject(currentId), camera);
@@ -680,10 +483,10 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
     if (ImGui::BeginTabItem(ICON_FA_CUBES_STACKED " Game Objects")) {
         int i = 0;
 
-        for (auto& pair : sceneManager.currentScene.gameObjects) {
-            GameObject& gameObject = pair.second;
+        for (auto& pair : sceneManager.currentScene->gameObjects) {
+            std::shared_ptr<GameObject> gameObject = pair.second;
             ImGui::PushID(i);
-            std::string newName = ICON_FA_CUBE + std::string(" " + gameObject.name);
+            std::string newName = ICON_FA_CUBE + std::string(" " + gameObject->name);
 
 
             if (ImGui::TreeNodeEx(newName.c_str())) {
@@ -709,13 +512,37 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
         ImGui::EndTabItem();
     }
 
+    if (ImGui::BeginTabItem("Shader Editor")) {
+        if (ImGui::Button("Reload Shader")) {
+            shaderList.at(1).reCompile();
+            if ( shaderList.at(1).getErrorLine() != -1) {
+                errorMarkers.insert(std::make_pair<int, std::string>(shaderList.at(1).getErrorLine(), shaderList.at(1).getErrorMessage().c_str()));
+                textEditor.SetErrorMarkers(errorMarkers);
+                errorline =shaderList.at(1).getErrorLine();
+            } else if (shaderList.at(1).getErrorLine() == -1) {
+                errorMarkers.erase(errorline);
+                textEditor.SetErrorMarkers(errorMarkers);
+            }
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Save")) {
+            std::ofstream out("../../Lomus/Shader/shaders/default.frag");
+            out << textEditor.GetText().c_str();
+            out.close();
+        }
+
+        textEditor.Render("--Shader editor--");
+        currentSceneState = SceneState::texteditor;
+        ImGui::EndTabItem();
+    }
+
     ImGui::EndTabBar();
 
 
     ImGui::End();
 }
-
-
 
 void Editor::renderOtherPanel(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
     ImGui::SetNextWindowPos(ImVec2(0, oldWindowHeight * 0.65f));
@@ -772,7 +599,7 @@ void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, L
 
 }
 
-void Editor::renderGameObjectProperties(GameObject& currentGameObject) {
+void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject) {
 
     ImGuiStyle& style = ImGui::GetStyle();
 
@@ -781,8 +608,11 @@ void Editor::renderGameObjectProperties(GameObject& currentGameObject) {
     ImGui::Text("Name: ");
     ImGui::PushID("name");
     ImGui::SameLine();
-    ImGui::InputText("", &currentGameObject.name);
+    ImGui::InputText("", &currentGameObject->name);
     ImGui::PopID();
+
+    ImGui::Text("ID: "); ImGui::SameLine(); ImGui::Text(  "%s", std::to_string(currentGameObject->id).c_str());
+
     ImGui::Spacing();
     ImGui::Spacing();
 
@@ -790,19 +620,19 @@ void Editor::renderGameObjectProperties(GameObject& currentGameObject) {
     if (ImGui::TreeNodeEx((ICON_FA_GEAR" TransFormation"), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
         ImGui::Spacing();
 ///     pos
-        float tempX[1] = {currentGameObject.position.x};
-        float tempY[1] = {currentGameObject.position.y};
-        float tempZ[1] = {currentGameObject.position.z};
+        float tempX[1] = {currentGameObject->position.x};
+        float tempY[1] = {currentGameObject->position.y};
+        float tempZ[1] = {currentGameObject->position.z};
         // Rot
-        float tempRX[1] = {currentGameObject.rotation.x};
-        float tempRY[1] = {currentGameObject.rotation.y};
-        float tempRZ[1] = {currentGameObject.rotation.z};
-        float tempRW[1] = {currentGameObject.rotation.w};
+        float tempRX[1] = {currentGameObject->rotation.x};
+        float tempRY[1] = {currentGameObject->rotation.y};
+        float tempRZ[1] = {currentGameObject->rotation.z};
+        float tempRW[1] = {currentGameObject->rotation.w};
         // Scale
 
-        float tempSX[1] = {currentGameObject.scale.x};
-        float tempSY[1] = {currentGameObject.scale.y};
-        float tempSZ[1] = {currentGameObject.scale.z};
+        float tempSX[1] = {currentGameObject->scale.x};
+        float tempSY[1] = {currentGameObject->scale.y};
+        float tempSZ[1] = {currentGameObject->scale.z};
 
 
         ImGui::Text("Position: ");
@@ -924,33 +754,33 @@ void Editor::renderGameObjectProperties(GameObject& currentGameObject) {
 
 
 
-        currentGameObject.position.x = tempX[0];
-        currentGameObject.position.y = tempY[0];
-        currentGameObject.position.z = tempZ[0];
+        currentGameObject->position.x = tempX[0];
+        currentGameObject->position.y = tempY[0];
+        currentGameObject->position.z = tempZ[0];
 
-        currentGameObject.rotation.x = tempRX[0];
-        currentGameObject.rotation.y = tempRY[0];
-        currentGameObject.rotation.z = tempRZ[0];
-        currentGameObject.rotation.w = tempRW[0];
+        currentGameObject->rotation.x = tempRX[0];
+        currentGameObject->rotation.y = tempRY[0];
+        currentGameObject->rotation.z = tempRZ[0];
+        currentGameObject->rotation.w = tempRW[0];
 
-        currentGameObject.scale.x = tempSX[0];
-        currentGameObject.scale.y = tempSY[0];
-        currentGameObject.scale.z = tempSZ[0];
+        currentGameObject->scale.x = tempSX[0];
+        currentGameObject->scale.y = tempSY[0];
+        currentGameObject->scale.z = tempSZ[0];
 
         ImGui::TreePop();
     }
 }
 
-void Editor::manipulateGameObjectViaGizmo(GameObject& gameObject, Camera& camera) {
+void Editor::manipulateGameObjectViaGizmo(std::shared_ptr<GameObject> gameObject, Camera& camera) {
     glm::mat4 trans = glm::mat4(1.0f);
     glm::mat4 rot = glm::mat4(1.0f);
     glm::mat4 sca = glm::mat4(1.0f);
 
 
     // Transform the matrices to their correct form
-    trans = glm::translate(trans, -gameObject.position);
-    rot = glm::mat4_cast(gameObject.rotation);
-    sca = glm::scale(sca, gameObject.scale);
+    trans = glm::translate(trans, -gameObject->position);
+    rot = glm::mat4_cast(gameObject->rotation);
+    sca = glm::scale(sca, gameObject->scale);
 
     glm::mat4 editMatrix = glm::mat4(1.0f) * trans * rot * sca;
     ImGuizmo::Enable(true);
@@ -974,13 +804,13 @@ void Editor::manipulateGameObjectViaGizmo(GameObject& gameObject, Camera& camera
 
     glm::decompose(editMatrix, newScale, newRot, newPos, skew, Perspective);
 
-    gameObject.position.x = -newPos.x;
-    gameObject.position.y = -newPos.y ;
-    gameObject.position.z = -newPos.z ;
+    gameObject->position.x = -newPos.x;
+    gameObject->position.y = -newPos.y ;
+    gameObject->position.z = -newPos.z ;
 
-    gameObject.scale = newScale;
+    gameObject->scale = newScale;
     newRot.w = -newRot.w;
-    gameObject.rotation = glm::conjugate(newRot);
+    gameObject->rotation = glm::conjugate(newRot);
 
 }
 
@@ -993,7 +823,7 @@ void Editor::renderActiveScene(SceneManager &sceneManager) {
     if (ImGui::BeginTabItem("General")) {
         ImGui::PushID("Scenename");
         ImGui::Text("Scene Name: "); ImGui::SameLine();
-        ImGui::InputText("", &sceneManager.currentScene.name);
+        ImGui::InputText("", &sceneManager.currentScene->name);
         ImGui::PopID();
         ImGui::EndTabItem();
     }
@@ -1030,6 +860,24 @@ void Editor::renderActiveScene(SceneManager &sceneManager) {
         ImGui::DragFloat(" ", shadowFarPlane, 1.0);
         ImGui::PopID();
 
+        ImGui::Separator();
+        ImGui::Text("Baises:");
+        ImGui::SameLine();
+        ImGui::PushID("SHADOWBIAS");
+        ImGui::DragFloat(" ", baises, 0.0001);
+        ImGui::PopID();
+
+        ImGui::Separator();
+        ImGui::Text("PCF Samples:");
+        ImGui::SameLine();
+        ImGui::PushID("SHADOWPCF");
+        ImGui::DragFloat(" ", shadowSamples, 0.01f);
+        ImGui::PopID();
+
+        shaderList.at(1).Activate();
+        shaderList.at(1).setFloatUniform("sBaises", baises[0]);
+        shaderList.at(1).setFloatUniform("sampleSize", shadowSamples[0]);
+
 
 
         ImGui::EndTabItem();
@@ -1037,9 +885,6 @@ void Editor::renderActiveScene(SceneManager &sceneManager) {
 
     ImGui::EndTabBar();
 }
-
-
-
 
 void Editor::createFBO(int width, int height) {
     glGenFramebuffers(1, &FBO);
@@ -1102,15 +947,13 @@ void Editor::resizeFrameBuffer(int newWidth, int newHeight) {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 }
 
-
-
 bool Editor::allowCameraInput() {
     float mouseX = ImGui::GetMousePos().x;
     float mouseY = ImGui::GetMousePos().y;
     float sceneViewWidth = windowWidth[0] * 0.75f;
     float sceneViewHeight = windowHeight[0] * 0.65f;
 
-    return false;//(mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
+    return (mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
 }
 
 void Editor::handleInputs(Camera &camera) {
@@ -1133,7 +976,5 @@ void Editor::handleInputs(Camera &camera) {
     }
 }
 
-void Editor::handleShaderEditor() {
-    //shaderEditor.Render();
-}
+
 

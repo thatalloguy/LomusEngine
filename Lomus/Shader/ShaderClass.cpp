@@ -23,10 +23,39 @@ std::string get_file_contents(const char* filename)
 	throw(errno);
 }
 
+void toekkenize(std::string const& str, const char delim, std::vector<std::string>& out) // For spliting string
+{
+
+    std::stringstream ss(str);
+
+    std::string s;
+    while (std::getline(ss, s, delim)) {
+        out.push_back(s);
+    }
+}
+
+
+int getNumberFromString(std::string str)
+{
+    std::vector<std::string> output1;
+    std::vector<std::string> output2;
+
+    toekkenize(str, '(', output1);
+    toekkenize(output1[1], ')', output2);
+
+    std::cout << output2[0] << "\n";
+
+    return std::stoi(output2[0]);
+}
+
 // Constructor that build the Shader Program from 2 different shaders
 Shader::Shader(const char* vertexFile, const char* fragmentFile)
 {
 	// Read vertexFile and fragmentFile and store the strings
+
+    Shader::vertexFile = vertexFile;
+    Shader::fragmentFile = fragmentFile;
+
 	std::string vertexCode = get_file_contents(vertexFile);
 	std::string fragmentCode = get_file_contents(fragmentFile);
 
@@ -69,6 +98,9 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 
 Shader::Shader(const char* vertexFile, const char* fragmentFile, const char* geometryFile)
 {
+
+    Shader::vertexFile = vertexFile;
+    Shader::fragmentFile = fragmentFile;
 	// Read vertexFile and fragmentFile and store the strings
 	std::string vertexCode = get_file_contents(vertexFile);
 	std::string fragmentCode = get_file_contents(fragmentFile);
@@ -146,13 +178,9 @@ void Shader::setFloatUniform(const char* name, float f) {
     glUniform1f(glGetUniformLocation(ID, name), f);
 }
 
-
 void Shader::setMat4Uniform(const char *name, glm::mat4& matrix) {
     glUniformMatrix4fv(glGetUniformLocation(ID, name), 1, GL_FALSE, glm::value_ptr(matrix));
 }
-
-
-
 
 GLuint Shader::getUniformLocation(const char* name)
 {
@@ -171,7 +199,6 @@ void Shader::Deactivate()
 	glUseProgram(0);
 }
 
-
 // Deletes the Shader Program
 void Shader::Delete()
 {
@@ -179,10 +206,11 @@ void Shader::Delete()
 }
 
 // Checks if the different Shaders have compiled properly
-void Shader::compileErrors(unsigned int shader, const char* type)
+bool Shader::compileErrors(unsigned int shader, const char* type)
 {
 	// Stores status of compilation
 	GLint hasCompiled;
+
 	// Character array to store error message in
 	char infoLog[1024];
 	if (type != "PROGRAM")
@@ -192,7 +220,12 @@ void Shader::compileErrors(unsigned int shader, const char* type)
 		{
 			glGetShaderInfoLog(shader, 1024, NULL, infoLog);
 			std::cout << "SHADER_COMPILATION_ERROR for:" << type << "\n" << infoLog << std::endl;
-		}
+            currentErrorMessage = infoLog;
+            currentErrorLine = getNumberFromString(infoLog);
+            return false;
+		} else if (hasCompiled == GL_TRUE) {
+            currentErrorLine = -1;
+        }
 	}
 	else
 	{
@@ -201,10 +234,72 @@ void Shader::compileErrors(unsigned int shader, const char* type)
 		{
 			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
 			std::cout << "SHADER_LINKING_ERROR for:" << type << "\n" << infoLog << std::endl;
-		}
+            currentErrorMessage = infoLog;
+            currentErrorLine = getNumberFromString(infoLog);
+            return false;
+		} else  if (hasCompiled == GL_TRUE){
+            currentErrorLine = -1;
+        }
 	}
+
 }
 
-void Shader::Recompile() {
-    Shader(vertexFile, fragmentFile);
+bool Shader::reCompile() {
+    // Delete the existing shader program
+
+    // Read the new shader source code
+    std::string vertexCode = get_file_contents(vertexFile);
+    std::string fragmentCode = get_file_contents(fragmentFile);
+    std::string geometryCode;
+
+    if (vertexCode.empty() || fragmentCode.empty()) {
+        std::cerr << "Failed to load shader source code." << std::endl;
+    }
+
+   // glDeleteProgram(ID);
+
+    // Convert the shader source strings into character arrays
+    const char* vertexSource = vertexCode.c_str();
+    const char* fragmentSource = fragmentCode.c_str();
+
+    // Create new shader objects and compile them
+    GLuint newVertexShader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint newFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+
+    glShaderSource(newVertexShader, 1, &vertexSource, NULL);
+    glShaderSource(newFragmentShader, 1, &fragmentSource, NULL);
+
+
+    glCompileShader(newVertexShader);
+    glCompileShader(newFragmentShader);
+
+
+    // Check for compilation errors
+    compileErrors(newVertexShader, "VERTEX");
+    compileErrors(newFragmentShader, "FRAGMENT");
+
+    // Create a new shader program and link the shaders
+    ID = glCreateProgram();
+    glAttachShader(ID, newVertexShader);
+    glAttachShader(ID, newFragmentShader);
+
+
+    glLinkProgram(ID);
+
+    // Check for linking errors
+    compileErrors(ID, "PROGRAM");
+
+    // Delete the old shader objects
+    glDeleteShader(newVertexShader);
+    glDeleteShader(newFragmentShader);
+    return true;
+}
+
+std::string Shader::getErrorMessage() {
+    return currentErrorMessage;
+}
+
+int Shader::getErrorLine() {
+    return Shader::currentErrorLine;
 }

@@ -178,8 +178,6 @@ void MulNode::SocketEvent(NodeSocket* OwnSocket, NodeSocket* ConnectedSocket, NO
 float MulNode::GetData()
 {
     if (a != nullptr && b != nullptr) {
-        std::cout << "A Data: " <<  a->GetData();
-        std::cout << " B Data: " <<  b->GetData() << "\n";
         return a->GetData() + b->GetData();
     } else {
         return 0.0f;
@@ -188,18 +186,11 @@ float MulNode::GetData()
 
 bool MulNode::CanConnect(NodeSocket* OwnSocket, NodeSocket* CandidateSocket, char** MsgToUser)
 {
-    //std::cout << "TYPES: " << OwnSocket->GetType() << " | " << CandidateSocket->GetType() << "\n";
     if (OwnSocket->GetType() == "INFLOAT" && CandidateSocket->GetType() == "FLOAT") {
-
-
         return true;
-    } else {
-        return false;
     }
+    return false;
 
-    //if (!Node::CanConnect(OwnSocket, CandidateSocket, nullptr))
-    //    return false;
 
-    //return false;
 }
 

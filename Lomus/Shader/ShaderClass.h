@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>
 
 #include <glm/gtc/type_ptr.hpp>
+#include <vector>
+
 std::string get_file_contents(const char* filename);
 
 class Shader
@@ -35,16 +37,19 @@ public:
 	void Deactivate();
 	// Deletes the Shader Program
 	void Delete();
+    bool reCompile();
 
-    void Recompile();
+    std::string getErrorMessage();
+    int getErrorLine();
 
 private:
     const char* vertexFile; // for recompiling;
     const char* fragmentFile;
 
-
+    std::string currentErrorMessage;
+    int currentErrorLine = -1;
 
 	// Checks if the different Shaders have compiled properly
-	void compileErrors(unsigned int shader, const char* type);
+	bool compileErrors(unsigned int shader, const char* type);
 };
 

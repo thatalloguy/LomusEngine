@@ -56,6 +56,7 @@ uniform float sBaises;
 uniform float sOffset;
 uniform float lAmbient;
 uniform float shadowAmbient;
+uniform float sampleSize;
 
 uniform int numLights;
 uniform Light lights[100];
@@ -127,11 +128,13 @@ float ShadowCalculation(vec4 fragPosLightSpace, Light light)
     float currentDepth = projCoords.z;
     // calculate bias (based on depth map resolution and slope)
     vec3 normal = normalize(Normal);
-    vec3 lightDir = normalize(-light.lightAngle - crntPos);
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    vec3 lightDir = normalize(light.lightAngle - crntPos);
+    float bias = sBaises;//max(sBaises * (1.0 - dot(normal, lightDir)), 0.005);
 
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec2 texelSize = sampleSize / textureSize(shadowMap, 0);
+
+
     for(int x = -1; x <= 1; ++x)
     {
         for(int y = -1; y <= 1; ++y)
@@ -279,3 +282,21 @@ void main()
     FragColor =  vec4(pow(color.xyz, vec3(1.0f / gamma)), 1.0);
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

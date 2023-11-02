@@ -135,9 +135,6 @@ int main() {
     glUniform1f(glGetUniformLocation(framebufferProgram.ID, "gamma"), 2.2f);
 
 
-    shaderProgram.Activate();
-    glUniform1f(glGetUniformLocation(shaderProgram.ID, "castShadow"), 0.2);
-    glUniform1i(glGetUniformLocation(shaderProgram.ID, "lightType"), 1);
 
     Camera camera(window_width, window_height, glm::vec3(0.0f, 0.0f, 2.0f));
 
@@ -147,15 +144,16 @@ int main() {
     sceneManager.createNewScene("mainScene");
     sceneManager.setCurrentScene("mainScene");
 
-    GameObject trees(glm::vec3(0, -20.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(9.0f, -4.0f, 7.0f), "Astronaut");
-    trees.createModel("../../Resources/Model/Astronaut/astronaut.obj");
-    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(10.0f, -1.0f, 10.0f), "Sponza");
+    GameObject trees(glm::vec3(0, -5.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "Cube :)");
+    trees.createModel("../../Resources/Model/testCube/testCube.gltf");
 
-    ground.createModel("../../Resources/Model/tree_ground/scene.gltf");
+    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(5.0f, -1.0f, 5.0f), "Sponza");
+
+    ground.createModel("../../Resources/Model/testCube/testCube.gltf");
 
 
-    sceneManager.addGameObject(trees, 1);
-    sceneManager.addGameObject(ground, 2);
+    sceneManager.addGameObject(trees);
+    sceneManager.addGameObject(ground);
 
 
 
@@ -173,7 +171,8 @@ int main() {
     lightManager.InitScene(sceneManager.getCurrentScene());
     lightManager.createNewLight(sceneManager.getCurrentScene(), sun);
     float gamma = 1.5f;
-    shaderProgram.setFloatUniform("gamma", gamma);
+
+
 
 
 
@@ -185,7 +184,9 @@ int main() {
 
     ShadowMap shadowMap;
     shadowMap.init();
-
+    shadowMap.far_plane = 26.0f;
+    shadowMap.near_plane = -52.0f;
+    shadowMap.area = 102;
     //fps counter
     double prevTime = 0.0;
     double crntTime = 0.0;
@@ -202,7 +203,7 @@ int main() {
 
 
 
-    Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene().world);
+    Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene()->world);
 
 
 
@@ -225,17 +226,15 @@ int main() {
 
     /// EDITORRR
     Lomus::Editor editor(window, Lomus::Editor::Clean);
-
+    editor.setShader(1, shaderProgram);
 
     std::string temp = "light1";
 
     Shader outline("../../Lomus/Shader/shaders/outline.vert", "../../Lomus/Shader/shaders/outline.frag");
     //load some shader stuff
     shaderProgram.Activate();
-    shaderProgram.setFloatUniform("sSamples", 8.0f);
-    shaderProgram.setFloatUniform("sBiases", 100.0f);
-    shaderProgram.setFloatUniform("sOffset", 20.7f);
-    shaderProgram.setFloatUniform("shadowAmbient", 1.0f);
+    shaderProgram.setFloatUniform("sBiases", 0.05f);
+    shaderProgram.setFloatUniform("sampleSize", 1.0f);
 
     shaderProgram.setFloatUniform("lAmbient", 0.20f);
 
@@ -292,6 +291,15 @@ int main() {
         lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
         shadowMap.updateShader(shaderProgram, sun);
 
+        shaderProgram.Activate();
+        shaderProgram.setFloatUniform("sBaises", 0.05f);
+        shaderProgram.setFloatUniform("sampleSize", 1.0f);
+
+        shaderProgram.setFloatUniform("lAmbient", 0.20f);
+        glUniform1f(glGetUniformLocation(shaderProgram.ID, "castShadow"), 0.2);
+        glUniform1i(glGetUniformLocation(shaderProgram.ID, "lightType"), 1);
+        shaderProgram.setFloatUniform("gamma", gamma);
+
         sceneManager.renderCurrentScene(shaderProgram, camera);
 
         ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics)
@@ -311,7 +319,7 @@ int main() {
 
 
 
-        editor.Render(sceneManager, lightManager, camera, EditorMode::shader);
+        editor.Render(sceneManager, lightManager, camera, EditorMode::editor);
 
 
 
@@ -338,3 +346,6 @@ int main() {
     glfwTerminate();
     return 0;
 }
+
+
+

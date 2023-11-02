@@ -13,6 +13,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtx/matrix_decompose.hpp>
 #include "../Input/Keyboard.h"
+#include "../../Thirdparty/ImGuiColorTextEdit/TextEditor.h"
 
 namespace Lomus {
 
@@ -43,9 +44,9 @@ namespace Lomus {
         int visible = 1;
         unsigned int shadowTexture;
 
-        float shadowArea[1] = {200};
-        float shadowNearPlane[1] = {-200};
-        float shadowFarPlane[1] = {20};
+        float shadowArea[1] = {100};
+        float shadowNearPlane[1] = {-50};
+        float shadowFarPlane[1] = {25};
     private:
 
         void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);
@@ -55,17 +56,16 @@ namespace Lomus {
         void renderOtherPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
 
         void renderPropertiesPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
-        void renderGameObjectProperties(GameObject& currentGameObject);
+        void renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject);
         void renderActiveScene(SceneManager& sceneManager);
 
         void createFBO(int width, int height);
 
         void resizeFrameBuffer(int newWidth, int newHeight);
-        void manipulateGameObjectViaGizmo(GameObject& gameObject, Camera& camera);
+        void manipulateGameObjectViaGizmo(std::shared_ptr<GameObject> gameObject, Camera& camera);
 
         void handleInputs(Camera& camera);
 
-        void handleShaderEditor();
 
         bool togglePressed = false;
 
@@ -83,8 +83,8 @@ namespace Lomus {
         unordered_map<int, Shader&> shaderList;
 
         // Debug editor stuff;
-        float shadowSamples[1] = {8.0f};
-        float baises[1] = {100.0f};
+        float shadowSamples[1] = {1};
+        float baises[1] = {0.05f};
         float offset[1] = {20.7f};
         float a[1] = {0.0003f};
         float b[1]= {0.00002f};
@@ -99,15 +99,20 @@ namespace Lomus {
         ImGuizmo::OPERATION currentGizmoState = ImGuizmo::OPERATION::TRANSLATE;
 
         enum EditorState{gameObject,Scene,Light,Script}; // What Type of object is the engine displaying / editing
-
+        enum SceneState {world, texteditor};
 
 
         EditorState currentState;
+        SceneState currentSceneState = SceneState::world;
         int currentId = -1;
 
         void initStlyle(EditorStyle style);
 
         ShaderEditor shaderEditor{};
+        TextEditor textEditor;
+        TextEditor::ErrorMarkers errorMarkers;
+
+        int errorline = 0;
 
 
     };

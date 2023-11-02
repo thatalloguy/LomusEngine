@@ -12,13 +12,13 @@ void LightManager::Delete()
 }
 
 
-void LightManager::updateShader(Shader& shader, Scene& scene)
+void LightManager::updateShader(Shader& shader, std::shared_ptr<Scene> scene)
 {
 
 	shader.Activate();
 	glUniform1i(glGetUniformLocation(shader.ID, "numLights"), placeId);
     int i = 0;
-	for (auto light : lightIdMap.at(scene.name)) { // placeId is the num of lights
+	for (auto light : lightIdMap.at(scene->name)) { // placeId is the num of lights
 		std::string curP = "lights[" + std::to_string(i) + "].lightPosition";
 		std::string curC = "lights[" + std::to_string(i) + "].lightColor";
 		std::string curI = "lights[" + std::to_string(i) + "].lightInten";
@@ -42,24 +42,24 @@ void LightManager::updateShader(Shader& shader, Scene& scene)
 
 
 
-void LightManager::deleteLight(Scene& scene, string& id)
+void LightManager::deleteLight(std::shared_ptr<Scene> scene, string& id)
 {
 	lightIdMap.erase(id);
 }
 
 
-void LightManager::InitScene(Scene &scene) {
+void LightManager::InitScene(std::shared_ptr<Scene> scene) {
     unordered_map<string, Light&> newMap;
-    lightIdMap.emplace(scene.name, newMap);
+    lightIdMap.emplace(scene->name, newMap);
 }
 
-void LightManager::createNewLight(Scene &scene, Light &light) {
-        lightIdMap.at(scene.name).emplace(light.name, light);
+void LightManager::createNewLight(std::shared_ptr<Scene> scene, Light &light) {
+        lightIdMap.at(scene->name).emplace(light.name, light);
         placeId++;
 }
 
-Light &LightManager::getLight(Scene& scene, std::string name) {
-    for (auto i : lightIdMap.at(scene.name)) {
+Light &LightManager::getLight(std::shared_ptr<Scene> scene, std::string name) {
+    for (auto i : lightIdMap.at(scene->name)) {
         Light& light = i.second;
         if (light.name.c_str() == name.c_str()) {
             return light;

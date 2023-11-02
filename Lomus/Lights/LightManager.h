@@ -30,16 +30,16 @@ class LightManager
 {
 public:
 	void Init();
-    void InitScene(Scene& scene);
+    void InitScene(std::shared_ptr<Scene> scene);
 	void Delete();
-	void createNewLight(Scene& scene, Light& light);
+	void createNewLight(std::shared_ptr<Scene> scene, Light& light);
 
 
-    Light& getLight(Scene& scene, std::string name);
+    Light& getLight(std::shared_ptr<Scene> scene, std::string name);
 
-	void updateShader(Shader& shader, Scene& scene);
+	void updateShader(Shader& shader, std::shared_ptr<Scene> scene);
 
-	void deleteLight(Scene& scene, string& id);
+	void deleteLight(std::shared_ptr<Scene> scene, string& id);
 
 
     int placeId = 0;

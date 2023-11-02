@@ -3,8 +3,8 @@
 
 using namespace Lomus;
 
-void tokenize(std::string const& str, const char delim,
-    std::vector<std::string>& out) // For spliting string 
+void tokennize(std::string const& str, const char delim,
+    std::vector<std::string>& out) // For spliting string
 {
 
     std::stringstream ss(str);
@@ -30,7 +30,7 @@ void applyForceCommand(std::vector<std::string>& args, Camera& camera, SceneMana
     if (args.size() == 4) {
         try {
             Vector3 force(stof(args[1]), stof(args[2]), stof(args[3]));
-            sceneManager.getGameobject(stoi(args[0])).mRigidBody->applyWorldForceAtCenterOfMass(force);
+            sceneManager.getGameobject(stoi(args[0]))->mRigidBody->applyWorldForceAtCenterOfMass(force);
             std::string out = "Applied force to Entity: " + to_string(force.x) + " | " + to_string(force.y) + " | " + to_string(force.z) + " \n";
             console.addConsoleLog(out.c_str());
         } catch (std::exception& e) {
@@ -59,10 +59,10 @@ void togglePhysicsCommand(std::vector<std::string>& args, Camera& camera, SceneM
 
 void listCommand(std::vector<std::string>& args, Camera& camera, SceneManager& sceneManager, Console& console) {
     console.addConsoleLog("Current Game Objects in the scene:\n");
-    Scene scene = sceneManager.getCurrentScene();
-    for (auto gameObject : scene.gameObjects) {
+    auto scene = sceneManager.getCurrentScene();
+    for (auto gameObject : scene->gameObjects) {
         std::string ids = +" | ID: " + to_string(gameObject.first);
-        std::string out = "--" + gameObject.second.name + ids + "\n";
+        std::string out = "--" + gameObject.second->name + ids + "\n";
         console.addConsoleLog(out.c_str());
     }
 }
@@ -142,7 +142,7 @@ void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& c
             if (!commandBuffer.empty()) {
                 prevCommand = commandBuffer;
                 std::vector<std::string> out;
-                tokenize(commandBuffer, ' ', out);
+                tokennize(commandBuffer, ' ', out);
                 commandBuffer = out[0];
                 out.erase(out.begin());
                 executeCommand(commandBuffer, out, camera, sceneManager);
