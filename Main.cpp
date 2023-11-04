@@ -288,6 +288,8 @@ int main() {
             ImGui::SetMouseCursor(ImGuiMouseCursor_None);
         }
 
+
+
         lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
         shadowMap.updateShader(shaderProgram, sun);
 

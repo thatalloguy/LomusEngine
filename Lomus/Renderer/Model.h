@@ -33,10 +33,12 @@ public:
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    void load(string const &path)
+    bool load(string const &path)
     {
+        isDeleted = false;
+        rawPath = path;
         gammaCorrection = false;
-        loadModel(path);
+        return loadModel(path);
     }
 
     void load(string const &path, map<string, string> texs) {
@@ -53,6 +55,17 @@ public:
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader, camera, matrix, translation, rotation, scale);
     }
+    string rawPath;
+    bool isDeleted = false;
+    void Delete() {
+        meshes.clear();
+        textures_loaded.clear();
+        isDeleted = true;
+    }
+
+    bool isEmpty() const {
+        return isDeleted;
+    }
 
 private:
 
@@ -60,7 +73,7 @@ private:
 
 
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(string const &path)
+    bool loadModel(string const &path)
     {
         // read file via ASSIMP
         Assimp::Importer importer;
@@ -69,13 +82,15 @@ private:
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
             cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
-            return;
+            return false;
         }
         // retrieve the directory path of the filepath
         directory = path.substr(0, path.find_last_of('/'));
 
         // process ASSIMP's root node recursively
         processNode(scene->mRootNode, scene);
+
+        return true;
     }
 
     void processNode(aiNode *node, const aiScene *scene)
@@ -93,6 +108,7 @@ private:
         {
             processNode(node->mChildren[i], scene);
         }
+
 
     }
 

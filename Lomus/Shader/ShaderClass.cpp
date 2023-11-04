@@ -222,9 +222,11 @@ bool Shader::compileErrors(unsigned int shader, const char* type)
 			std::cout << "SHADER_COMPILATION_ERROR for:" << type << "\n" << infoLog << std::endl;
             currentErrorMessage = infoLog;
             currentErrorLine = getNumberFromString(infoLog);
+            Shader::isBroken = true;
             return false;
 		} else if (hasCompiled == GL_TRUE) {
             currentErrorLine = -1;
+            Shader::isBroken = false;
         }
 	}
 	else
@@ -236,9 +238,11 @@ bool Shader::compileErrors(unsigned int shader, const char* type)
 			std::cout << "SHADER_LINKING_ERROR for:" << type << "\n" << infoLog << std::endl;
             currentErrorMessage = infoLog;
             currentErrorLine = getNumberFromString(infoLog);
+            Shader::isBroken = true;
             return false;
 		} else  if (hasCompiled == GL_TRUE){
             currentErrorLine = -1;
+            Shader::isBroken = false;
         }
 	}
 

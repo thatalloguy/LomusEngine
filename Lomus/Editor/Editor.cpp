@@ -427,50 +427,57 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
     oldWindowWidth = windowWidth[0];
 
 
+
     glfwGetWindowSize(Editor::rawWindow, Editor::windowWidth, Editor::windowHeight);
 
     if (oldWindowWidth != windowWidth[0] || oldWindowHeight != windowHeight[0]) {
+
+        if (isWindowMinized()) {
+            windowWidth[0] = 1;
+            windowHeight[0] = 1;
+        }
+
         resizeFrameBuffer(Editor::windowWidth[0], Editor::windowHeight[0]);
-        std::cout << "Window size changed to: " << Editor::windowWidth[0] << "X" << Editor::windowHeight[0] << "\n";
     }
     oldWindowHeight = windowHeight[0];
     oldWindowWidth = windowWidth[0];
-    ImGui::SetNextWindowPos(ImVec2(0,0));
-    ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f,oldWindowHeight * 0.65f));
-    ImGui::Begin(ICON_FA_TABLE_CELLS_LARGE " Windows", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse);
-    ImGui::BeginTabBar("Bigboi's");
+
+        ImGui::SetNextWindowPos(ImVec2(0,0));
+        ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f,oldWindowHeight * 0.65f));
+        ImGui::Begin(ICON_FA_TABLE_CELLS_LARGE " Windows", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse);
+        ImGui::BeginTabBar("Bigboi's");
 
 
-    imTexID = (void*)(intptr_t)texture_id;
+        imTexID = (void*)(intptr_t)texture_id;
 
-    if (ImGui::BeginTabItem("Scene")) {
-        ImGui::Image(imTexID, ImVec2(static_cast<float>(oldWindowWidth * 0.745f), static_cast<float>(oldWindowHeight * 0.65f)),ImVec2(0, 1), ImVec2(1, 0));
-        currentSceneState = SceneState::world;
-        ImGui::EndTabItem();
-    }
-
-
-
-    ImGui::EndTabBar();
+        if (ImGui::BeginTabItem("Scene")) {
+            ImGui::Image(imTexID, ImVec2(static_cast<float>(oldWindowWidth * 0.745f), static_cast<float>(oldWindowHeight * 0.65f)),ImVec2(0, 1), ImVec2(1, 0));
+            currentSceneState = SceneState::world;
+            ImGui::EndTabItem();
+        }
 
 
-    if (currentId != -1) {
-        manipulateGameObjectViaGizmo(sceneManager.getGameobject(currentId), camera);
-    }
 
-    ImGui::End();
+        ImGui::EndTabBar();
 
 
-    renderSelectionPanel(camera, sceneManager, lightManager);
+        if (currentId != -1) {
+            manipulateGameObjectViaGizmo(sceneManager.getGameobject(currentId), camera);
+        }
 
-    renderOtherPanel(camera, sceneManager, lightManager);
+        ImGui::End();
 
-    renderPropertiesPanel(camera, sceneManager, lightManager);
 
-    handleInputs(camera);
+        renderSelectionPanel(camera, sceneManager, lightManager);
+
+        renderOtherPanel(camera, sceneManager, lightManager);
+
+        renderPropertiesPanel(camera, sceneManager, lightManager);
+
+        handleInputs(camera);
+
 
 }
-
 
 void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
 
@@ -769,7 +776,114 @@ void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameO
 
         ImGui::TreePop();
     }
+    ImGui::Text(" ");
+    if (!currentGameObject->model.isEmpty()) {
+        if (ImGui::TreeNodeEx((ICON_FA_CUBES" Model"), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
+            renderModelComponent(currentGameObject->model);
+            ImGui::TreePop();
+        }
+    }
+    ImGui::Text(" ");
+
+    ImGui::Separator();
+
+    ImGui::Text(" ");
+    if (ImGui::Button("Add Component", ImVec2(windowWidth[0] / 4, 0.0f))) {
+        selectingComponents = true;
+        ImGui::OpenPopup("Select a component:");
+    }
+
+
+    if (ImGui::BeginPopup("Select a component:")) {
+
+        if (ImGui::BeginMenu("Render")) {
+
+            if (ImGui::MenuItem("Model")) {
+                selectingComponents = false;
+                currentGameObject->model.isDeleted = false;
+            }
+
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Physics")) {
+
+            ImGui::Text("Nothing here");
+
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Scripting")) {
+
+            ImGui::Text("Nothing here");
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
+
 }
+
+
+void Editor::renderModelComponent(Model& model) {
+    if (model.rawPath != "EMPTY") {
+
+        ImGui::Text("Name: "); ImGui::SameLine();
+        ImGui::BeginDisabled();
+
+        vector<string> filename;
+        vector<string> fileextension;
+        Lomus::Toolbox::splitStringToComponents(model.rawPath, '/', filename);
+        Lomus::Toolbox::splitStringToComponents(filename.back(), '.', filename);
+        filename.pop_back();
+        Lomus::Toolbox::splitStringToComponents(model.rawPath, '.', fileextension);
+        ImGui::Button(filename.back().c_str());
+        ImGui::EndDisabled();
+
+        ImGui::Text("File extension: "); ImGui::SameLine();
+        ImGui::BeginDisabled();
+        string extension = "." + fileextension.back();
+        ImGui::Button(extension.c_str());
+        ImGui::EndDisabled();
+
+        ImGui::Text(" ");
+        if (ImGui::Button("Change")) {
+            ImGui::OpenPopup("Open File");
+        }
+        ImGui::Text(" ");
+    } else {
+
+        if (ImGui::Button("Load Model")) {
+            ImGui::OpenPopup("Open File");
+        }
+    }
+
+
+    if(file_dialog.showFileDialog("Open File", imgui_addons::ImGuiFileBrowser::DialogMode::OPEN, ImVec2(windowWidth[0] / 2, windowHeight[0] / 2)))
+    {
+        if (!file_dialog.selected_path.empty()) {
+            model.Delete();
+            if (!model.load(file_dialog.selected_path)) {
+                mConsole.addConsoleLog("[ERROR] could not load model file!\n");
+                ImGui::OpenPopup("Error");
+
+                if (ImGui::BeginPopupModal("Error")) {
+                    ImGui::Text("[ERROR] could not load model file!");
+                    ImGui::EndPopup();
+                }
+            }
+        }
+
+    }
+
+    if (ImGui::Button("Remove")) {
+        model.rawPath = "EMPTY";
+        model.Delete();
+    }
+
+}
+
+
 
 void Editor::manipulateGameObjectViaGizmo(std::shared_ptr<GameObject> gameObject, Camera& camera) {
     glm::mat4 trans = glm::mat4(1.0f);
@@ -936,15 +1050,18 @@ void Editor::Delete() {
 }
 
 void Editor::resizeFrameBuffer(int newWidth, int newHeight) {
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, newWidth, newHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id, 0);
 
-    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, newWidth, newHeight);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+    if (newWidth > 0 && newHeight > 0) {
+        glBindTexture(GL_TEXTURE_2D, texture_id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, newWidth, newHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id, 0);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, newWidth, newHeight);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+    }
 }
 
 bool Editor::allowCameraInput() {
@@ -953,7 +1070,7 @@ bool Editor::allowCameraInput() {
     float sceneViewWidth = windowWidth[0] * 0.75f;
     float sceneViewHeight = windowHeight[0] * 0.65f;
 
-    return (mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
+    return (windowWidth[0] > 0 && windowHeight[0] > 0 && !selectingComponents && mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
 }
 
 void Editor::handleInputs(Camera &camera) {
@@ -976,5 +1093,8 @@ void Editor::handleInputs(Camera &camera) {
     }
 }
 
+bool Editor::isWindowMinized() {
+    return !(windowWidth[0] > 0 && windowHeight[0] > 0);
+}
 
 

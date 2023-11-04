@@ -50,10 +50,11 @@ public:
 	//Shapes
 	std::vector<Collider*> colliders;
 	bool isPhysical = false;
+    Model model;
+
 
 private:
 	//Components
     glm::mat4 matrix{1.0f};
-	Model model;
 };
 

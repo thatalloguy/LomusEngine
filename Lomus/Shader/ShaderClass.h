@@ -42,6 +42,8 @@ public:
     std::string getErrorMessage();
     int getErrorLine();
 
+    bool isBroken = false;
+
 private:
     const char* vertexFile; // for recompiling;
     const char* fragmentFile;

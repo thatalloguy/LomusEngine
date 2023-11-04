@@ -51,9 +51,12 @@ std::shared_ptr<GameObject> SceneManager::getGameobject(int id)
 
 void SceneManager::renderCurrentScene(Shader& shader, Lomus::Camera& camera)
 {
-	for (auto& gameObject : currentScene->gameObjects) {
-		gameObject.second->Draw(shader, camera);
-	}
+    if (!shader.isBroken) {
+        for (auto& gameObject : currentScene->gameObjects) {
+            gameObject.second->Draw(shader, camera);
+        }
+    }
+
 }
 
 

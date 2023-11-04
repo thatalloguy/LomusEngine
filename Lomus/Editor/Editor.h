@@ -2,12 +2,15 @@
 #include "../../Thirdparty/imgui/imgui.h"
 #include "../../Thirdparty/imgui/ImGuizmo.h"
 #include "../../Thirdparty/imgui/IconsFontAwesome6.h"
+#include "../../Thirdparty/imgui/ImGuiFileBrowser.h"
 
 
 #include "../Core/SceneManager.h"
 #include "../Lights/LightManager.h"
 #include "../Core/Console.h"
 #include "../Shader/ShaderClass.h"
+#include "../Utils/ToolBox.h"
+
 #include "ShaderEditor.h"
 
 #include <GLFW/glfw3.h>
@@ -34,7 +37,7 @@ namespace Lomus {
         void Delete();
         void Render(SceneManager& sceneManager, LightManager& lightManager, Camera& camera, EditorMode mode);
         void setShader(int i, Shader& shader);
-
+        bool isWindowMinized();
 
         bool allowCameraInput();
 
@@ -58,6 +61,8 @@ namespace Lomus {
         void renderPropertiesPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
         void renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject);
         void renderActiveScene(SceneManager& sceneManager);
+        void renderModelComponent(Model& model);
+
 
         void createFBO(int width, int height);
 
@@ -68,7 +73,7 @@ namespace Lomus {
 
 
         bool togglePressed = false;
-
+        bool selectingComponents = false;
 
         GLFWwindow* rawWindow;
 
@@ -111,6 +116,7 @@ namespace Lomus {
         ShaderEditor shaderEditor{};
         TextEditor textEditor;
         TextEditor::ErrorMarkers errorMarkers;
+        imgui_addons::ImGuiFileBrowser file_dialog;
 
         int errorline = 0;
 

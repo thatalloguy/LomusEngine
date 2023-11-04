@@ -132,25 +132,33 @@ float ShadowCalculation(vec4 fragPosLightSpace, Light light)
     float bias = sBaises;//max(sBaises * (1.0 - dot(normal, lightDir)), 0.005);
 
     float shadow = 0.0;
-    vec2 texelSize = sampleSize / textureSize(shadowMap, 0);
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+	
+	int samples = 1;
 
-
-    for(int x = -1; x <= 1; ++x)
+    for(int x = -samples; x <= samples; ++x)
     {
-        for(int y = -1; y <= 1; ++y)
+        for(int y = -samples; y <= samples; ++y)
         {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x , y) * texelSize).r;
             shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;
         }
     }
-    shadow /= 9.0;
+    shadow /= 1.0;
 
     // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-    if(projCoords.z > 1.0)
-    shadow = 0.0;
-
+    if(projCoords.z > 1) {
+    	shadow = 0.0;
+    }
     return shadow;
 }
+
+float getNewShadow() {
+
+	return 0.0;
+}
+
+
 
 vec4 pointLightB(Light light) {
     vec3 fixedLightPos = vec3(light.lightPosition.x, light.lightPosition.y, light.lightPosition.z);
@@ -240,7 +248,35 @@ vec4 directLight(Light light) {
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
     vec3 specular = spec * lightColor;
     // calculate shadow
-    float shadow = ShadowCalculation(fragPosLight, light);
+    float shadow = -2.0f;
+	// Sets lightCoords to cull space
+	vec3 lightCoords = fragPosLight.xyz / fragPosLight.w;
+	if(lightCoords.z <= 1.0f)
+	{
+		// Get from [-1, 1] range to [0, 1] range just like the shadow map
+		lightCoords = (lightCoords + 1.0f) / 2.0f;
+		float currentDepth = lightCoords.z;
+		// Prevents shadow acne
+		float bias = max(0.025f * (1.0f - dot(normal, light.lightAngle)), 0.025f);
+
+		// Smoothens out the shadows
+		int sampleRadius = 5;
+		vec2 pixelSize = 1.0 / textureSize(shadowMap, 0);
+		for(int y = -sampleRadius; y <= sampleRadius; y++)
+		{
+		    for(int x = -sampleRadius; x <= sampleRadius; x++)
+		    {
+		        float closestDepth = texture(shadowMap, lightCoords.xy - vec2(x, y) * pixelSize).r;
+				if (currentDepth > closestDepth + bias)
+					shadow += 1.0f;     
+		    }    
+		}
+		// Get average shadow
+		shadow /= pow((sampleRadius * 2 + 1), 2.1);
+
+	}
+
+    
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
     return vec4(lighting, 1);
 }
@@ -282,6 +318,12 @@ void main()
     FragColor =  vec4(pow(color.xyz, vec3(1.0f / gamma)), 1.0);
 
 }
+
+
+
+
+
+
 
 
 

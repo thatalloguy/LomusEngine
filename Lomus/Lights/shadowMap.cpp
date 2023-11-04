@@ -96,7 +96,7 @@ void cubeShadowMap::Delete()
 
 std::vector<glm::vec4> getFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view)
 {
-    const auto inv = glm::inverse(proj * view);
+    const auto inv = glm::inverse(view * proj);
 
     std::vector<glm::vec4> frustumCorners;
     for (unsigned int x = 0; x < 2; ++x)
@@ -159,7 +159,7 @@ void ShadowMap::prepareRender(Camera &camera, Light &light, float resoWidth, flo
     glClear(GL_DEPTH_BUFFER_BIT);
 
     camera.updateMatrix(45.0f, 0.1f, 1000.0f, resoWidth, resoHeight);
-    corners = getFrustumCornersWorldSpace(camera.view, camera.projection);
+    corners = getFrustumCornersWorldSpace(camera.projection, camera.view);
     glm::vec3 center = glm::vec3(0, 0, 0);
     for (const auto& v : corners)
     {
@@ -167,13 +167,13 @@ void ShadowMap::prepareRender(Camera &camera, Light &light, float resoWidth, flo
     }
     center /= corners.size();
 
-    const auto lightView = glm::lookAt(
+    const auto mlightView = glm::lookAt(
             center + glm::normalize(glm::vec3(light.lightAngle[0],light.lightAngle[1],light.lightAngle[2])),
             center,
             glm::vec3(0.0f, 1.0f, 0.0f)
     );
     lightProjection = glm::ortho(-area, area, -area, area, near_plane, far_plane);
-    lightSpaceMatrix = lightProjection * lightView;
+    lightSpaceMatrix = lightProjection * mlightView;
 
 
 
