@@ -2,11 +2,46 @@
 
 LomusEngine is a game engine written in C++ with Opengl 3.0 core.
 
-#ScreenShots:
+# Core Engine Features:
+- GameObjects
+- 3D model support with Assimp
+- Point & Direct Lights
+- Multiple Light & Scene Managing system
+- Physics with reactPhysics3D
+- Physics Debug Renderer
+- Shadow (broken atm)
+- Input Detection
+- Shader Hot reloading
+- Console & Custom commands with arguments
 
+# Editor Features:
+- GameObjects Editable
+- Shadows Editable
+- Model component editable
+- Console
+- Simple Shader code Editor
 
-(Editor )
-![image](https://github.com/thatalloguy/LomusEngine/assets/51132972/a3a4881e-6222-4882-8d89-7a9ac85a6f23)
+# Libs Used (not included in this repo!):
+- Assimp
+- Glad
+- Glfw
+- Glm
+- Imgui
+- ImguiColorTextEdit
+- ImGuizmo
+- Imstb
+- ImGuiFileBrowser
+- iconsFontAwesome6
+- Json
+- reactPhysics3d
+- stb
+- visualNodeSystem
+
+# ScreenShots:
+
+(Current Editor Look)
+![image](https://github.com/thatalloguy/LomusEngine/assets/51132972/b94bf394-8fba-4a61-9632-d56f7d605ff1)
+
 
 (NormalMap Test + Sponza)
 ![normalmap](https://github.com/thatalloguy/LomusEngine/assets/51132972/298cbcf5-443b-4590-900c-152319accf48)
@@ -17,5 +52,5 @@ https://github.com/thatalloguy/LomusEngine/assets/51132972/bba1beca-c778-498d-be
 
 # How development is going:
 Engine made by 1 person. This is a passion project <3
-__________________________________________________________
-All of the source code inside of Lomus belongs to me >:)
+
+
