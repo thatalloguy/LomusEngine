@@ -17,12 +17,14 @@ LomusEngine is a game engine written in C++ with Opengl 3.0 core.
 - Console & Custom commands with arguments
 
 # Editor Features:
+- Nice Workflow
 - GameObjects Editable
 - Shadows Editable
 - Model component editable
 - Console
 - Simple Shader code Editor
 - Light Editor
+- Edit PBR materials
   
 
 # Libs Used (not included in this repo!):
@@ -48,7 +50,8 @@ LomusEngine is a game engine written in C++ with Opengl 3.0 core.
 
 
 (Sponza With Physical based renderer (No reflections atm) )
-![sponzaPBrv2](https://github.com/thatalloguy/LomusEngine/assets/51132972/2a7d29d7-3463-44a5-baa2-ca9a5b6e5c5b)
+![SponzaPBRv3](https://github.com/thatalloguy/LomusEngine/assets/51132972/2c70aba7-8f82-4919-b67d-2b86149e5e70)
+![helmet](https://github.com/thatalloguy/LomusEngine/assets/51132972/52a93ee1-88d0-48c3-83ce-798479e855d9)
 
 
 # Physics test:
