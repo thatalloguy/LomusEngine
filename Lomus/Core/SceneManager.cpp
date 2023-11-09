@@ -142,3 +142,13 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp)
 		}
 	}
 }
+
+void SceneManager::renderShadowMapScene(Shader &shader, Lomus::Camera &camera) {
+    if (!shader.isBroken) {
+        for (auto& gameObject : currentScene->gameObjects) {
+            if (gameObject.second->castsShadow) {
+                gameObject.second->Draw(shader, camera);
+            }
+        }
+    }
+}

@@ -26,6 +26,7 @@ public:
     std::shared_ptr<GameObject> getGameobject(int id);
 
 	void renderCurrentScene(Shader& shader, Lomus::Camera& camera);
+    void renderShadowMapScene(Shader& shader, Lomus::Camera& camera);
 
 	void Delete();
 

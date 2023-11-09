@@ -27,6 +27,7 @@ class Model
 {
 public:
     // model data
+    Lomus::Material mMaterial;
     vector<mTexture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     vector<Mesh>    meshes;
     string directory;
@@ -50,10 +51,11 @@ public:
     void Draw(Shader &shader, Lomus::Camera& camera, glm::mat4& matrix,
               glm::vec3& translation,
               glm::quat& rotation,
-              glm::vec3& scale)
+              glm::vec3& scale,
+              bool castShadow = true)
     {
         for(unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].Draw(shader, camera, matrix, translation, rotation, scale);
+            meshes[i].Draw(shader, camera, matrix, translation, rotation, scale, mMaterial, castShadow);
     }
     string rawPath;
     bool isDeleted = false;
@@ -186,12 +188,23 @@ private:
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         // 4. height maps
         // 2. specular maps
-        vector<mTexture> specularMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_specular");
+        vector<mTexture> specularMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metaliness");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
 
         std::vector<mTexture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+
+        std::vector<mTexture> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, "texture_emissive");
+        textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
+
+        std::vector<mTexture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, "texture_ao");
+        textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
+
+        mMaterial.useMetalRoughnessMap = !specularMaps.empty();
+        mMaterial.useNormalMap = !normalMaps.empty();
+        mMaterial.useAOMap = !aoMaps.empty();
+        mMaterial.useEmissivityMap = !emissiveMaps.empty();
 
 
         // Now we load external textures if the model type didnt specify it

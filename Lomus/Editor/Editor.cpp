@@ -459,11 +459,36 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
 
 
         ImGui::EndTabBar();
+        if (currentId != -1 && currentState == EditorState::gameObject) {
+            auto currentGameObject = sceneManager.getGameobject(currentId);
+            Editor::movableObject moveObject = {
+                    currentGameObject->position,
+                    currentGameObject->rotation,
+                    currentGameObject->scale,
+            };
 
-
-        if (currentId != -1) {
-            manipulateGameObjectViaGizmo(sceneManager.getGameobject(currentId), camera);
+            manipulateObjectViaGizmo(moveObject, camera);
         }
+
+        if (currentSelectedLight != nullptr && currentState == EditorState::Light && currentSelectedLight->lightType != 1) {
+
+            glm::vec3 tp = glm::vec3(currentSelectedLight->lightPosition_x,currentSelectedLight->lightPosition_y,currentSelectedLight->lightPosition_z);
+            glm::quat tq = glm::quat(0, 0, 0, 1);
+            glm::vec3 ts = glm::vec3(1, 1, 1);
+
+            Editor::movableObject moveObject = {
+                    tp,
+                    tq,
+                    ts
+            };
+
+            manipulateObjectViaGizmo(moveObject, camera);
+
+            currentSelectedLight->lightPosition_x = tp.x;
+            currentSelectedLight->lightPosition_y = tp.y;
+            currentSelectedLight->lightPosition_z = tp.z;
+        }
+
 
         ImGui::End();
 
@@ -487,9 +512,10 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
 
     ImGui::BeginTabBar("Selection");
 
-    if (ImGui::BeginTabItem(ICON_FA_CUBES_STACKED " Game Objects")) {
+    if (ImGui::BeginTabItem(ICON_FA_CUBES " Game Objects")) {
         int i = 0;
 
+        currentState = EditorState::gameObject;
         for (auto& pair : sceneManager.currentScene->gameObjects) {
             std::shared_ptr<GameObject> gameObject = pair.second;
             ImGui::PushID(i);
@@ -499,7 +525,6 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
             if (ImGui::TreeNodeEx(newName.c_str())) {
 
                 currentId = pair.first;
-                currentState = EditorState::gameObject;
                 ImGui::TreePop();
             }
 
@@ -515,11 +540,56 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem(ICON_FA_LIGHTBULB " Lights")) {
-        ImGui::Text("Lights here");
+        currentState = EditorState::Light;
+        currentSelectedLight = nullptr;
+        int i = 0;
+
+        for (auto& pair : lightManager.lightIdMap.at(sceneManager.currentScene->name)) {
+
+
+            ImGui::PushID(i);
+            std::string newName = ICON_FA_LIGHTBULB + std::string(" " + pair.second->name);
+
+
+            if (ImGui::TreeNodeEx(newName.c_str())) {
+
+                currentSelectedLight = pair.second;
+
+                ImGui::TreePop();
+            }
+
+            i++;
+            ImGui::PopID();
+        }
         ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("Shader Editor")) {
+
+
+    ImGui::EndTabBar();
+
+
+    ImGui::End();
+}
+
+void Editor::renderOtherPanel(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
+    ImGui::SetNextWindowPos(ImVec2(0, oldWindowHeight * 0.65f));
+    ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f, oldWindowHeight * 0.35f));
+    ImGui::Begin(ICON_FA_GEARS " Other", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+
+    ImGui::BeginTabBar("Other");
+
+    if (ImGui::BeginTabItem(ICON_FA_FOLDER " Files")) {
+        ImGui::Text("Files here");
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem(ICON_FA_TERMINAL " Console")) {
+        mConsole.renderConsole(Editor::rawWindow, oldWindowWidth * 0.75f, oldWindowHeight * 0.35f, camera, sceneManager, Lomus::ConsoleMode::intergrated);
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem(ICON_FA_CODE" Shader Editor")) {
         if (ImGui::Button("Reload Shader")) {
             shaderList.at(1).reCompile();
             if ( shaderList.at(1).getErrorLine() != -1) {
@@ -547,29 +617,6 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
 
     ImGui::EndTabBar();
 
-
-    ImGui::End();
-}
-
-void Editor::renderOtherPanel(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
-    ImGui::SetNextWindowPos(ImVec2(0, oldWindowHeight * 0.65f));
-    ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f, oldWindowHeight * 0.35f));
-    ImGui::Begin(ICON_FA_GEARS " Other", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
-
-    ImGui::BeginTabBar("Other");
-
-    if (ImGui::BeginTabItem(ICON_FA_FOLDER " Files")) {
-        ImGui::Text("Files here");
-        ImGui::EndTabItem();
-    }
-
-    if (ImGui::BeginTabItem(ICON_FA_TERMINAL " Console")) {
-        mConsole.renderConsole(Editor::rawWindow, oldWindowWidth * 0.75f, oldWindowHeight * 0.35f, camera, sceneManager, Lomus::ConsoleMode::intergrated);
-        ImGui::EndTabItem();
-    }
-
-    ImGui::EndTabBar();
-
     ImGui::End();
 }
 
@@ -585,8 +632,7 @@ void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, L
         case gameObject:
 
             if (currentId != -1) {
-                renderGameObjectProperties(sceneManager.getGameobject(currentId));
-
+                renderGameObjectProperties(sceneManager.getGameobject(currentId), camera);
 
             }
 
@@ -595,7 +641,8 @@ void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, L
             renderActiveScene(sceneManager);
             break;
         case Light:
-            mConsole.addConsoleLog("Not Ready!\n");
+            renderLightProperties();
+            //mConsole.addConsoleLog("Not Ready!\n");
             break;
         case Script:
             mConsole.addConsoleLog("Not Ready!\n");
@@ -606,9 +653,10 @@ void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, L
 
 }
 
-void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject) {
+void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject, Camera& camera) {
 
     ImGuiStyle& style = ImGui::GetStyle();
+
 
 
 
@@ -617,6 +665,7 @@ void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameO
     ImGui::SameLine();
     ImGui::InputText("", &currentGameObject->name);
     ImGui::PopID();
+
 
     ImGui::Text("ID: "); ImGui::SameLine(); ImGui::Text(  "%s", std::to_string(currentGameObject->id).c_str());
 
@@ -824,7 +873,6 @@ void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameO
 
 }
 
-
 void Editor::renderModelComponent(Model& model) {
     if (model.rawPath != "EMPTY") {
 
@@ -881,20 +929,78 @@ void Editor::renderModelComponent(Model& model) {
         model.Delete();
     }
 
+    if (ImGui::TreeNodeEx((ICON_FA_GEAR" Material"), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
+        bool boolN[1] = {model.mMaterial.useNormalMap};
+        bool boolMR[1] = {model.mMaterial.useMetalRoughnessMap};
+        bool boolAO[1] = {model.mMaterial.useAOMap};
+        bool boolE[1] = {model.mMaterial.useEmissivityMap};
+
+        float Mamplifier[1] = {model.mMaterial.metalAmplifier};
+        float Ramplifier[1] = {model.mMaterial.roughnessAmplifier};
+        float AOamplifier[1] = {model.mMaterial.aoAmplifier};
+        float Eamplifier[1] = {model.mMaterial.emissiveAmplifier};
+
+        ImGui::BeginDisabled();
+
+        ImGui::Text("has NormalMap: "); ImGui::SameLine(); ImGui::PushID("mN");
+        ImGui::Checkbox(" ", boolN);
+        ImGui::PopID();
+
+        ImGui::Text("has Metal-RoughnessMap: "); ImGui::SameLine(); ImGui::PushID("mM");
+        ImGui::Checkbox(" ", boolMR);
+        ImGui::PopID();
+
+        ImGui::Text("has AOMap: "); ImGui::SameLine(); ImGui::PushID("mA");
+        ImGui::Checkbox(" ", boolAO);
+        ImGui::PopID();
+
+        ImGui::Text("has EmissiveMap: "); ImGui::SameLine(); ImGui::PushID("mE");
+        ImGui::Checkbox(" ", boolE);
+        ImGui::PopID();
+
+        ImGui::EndDisabled();
+
+
+        ImGui::Text("Metal amplifier: "); ImGui::SameLine(); ImGui::PushID("ma");
+        ImGui::DragFloat(" ", Mamplifier, 0.05, 0.001);
+        ImGui::PopID();
+
+
+        ImGui::Text("Roughness amplifier: "); ImGui::SameLine(); ImGui::PushID("ra");
+        ImGui::DragFloat(" ", Ramplifier, 0.05, 0.001);
+        ImGui::PopID();
+
+
+        ImGui::Text("AO amplifier: "); ImGui::SameLine(); ImGui::PushID("aoa");
+        ImGui::DragFloat(" ", AOamplifier, 0.05, 0.001);
+        ImGui::PopID();
+
+
+        ImGui::Text("Emissivity amplifier: "); ImGui::SameLine(); ImGui::PushID("ea");
+        ImGui::DragFloat(" ", Eamplifier, 0.05, 0.001);
+        ImGui::PopID();
+
+        model.mMaterial.metalAmplifier = Mamplifier[0];
+        model.mMaterial.roughnessAmplifier = Ramplifier[0];
+        model.mMaterial.aoAmplifier = AOamplifier[0];
+        model.mMaterial.emissiveAmplifier = Eamplifier[0];
+
+        ImGui::TreePop();
+
+    }
+
 }
 
-
-
-void Editor::manipulateGameObjectViaGizmo(std::shared_ptr<GameObject> gameObject, Camera& camera) {
+void Editor:: manipulateObjectViaGizmo(movableObject& object, Camera& camera) {
     glm::mat4 trans = glm::mat4(1.0f);
     glm::mat4 rot = glm::mat4(1.0f);
     glm::mat4 sca = glm::mat4(1.0f);
 
 
     // Transform the matrices to their correct form
-    trans = glm::translate(trans, -gameObject->position);
-    rot = glm::mat4_cast(gameObject->rotation);
-    sca = glm::scale(sca, gameObject->scale);
+    trans = glm::translate(trans, -object.position);
+    rot = glm::mat4_cast(object.rotation);
+    sca = glm::scale(sca, object.scale);
 
     glm::mat4 editMatrix = glm::mat4(1.0f) * trans * rot * sca;
     ImGuizmo::Enable(true);
@@ -918,20 +1024,17 @@ void Editor::manipulateGameObjectViaGizmo(std::shared_ptr<GameObject> gameObject
 
     glm::decompose(editMatrix, newScale, newRot, newPos, skew, Perspective);
 
-    gameObject->position.x = -newPos.x;
-    gameObject->position.y = -newPos.y ;
-    gameObject->position.z = -newPos.z ;
+    object.position.x = -newPos.x;
+    object.position.y = -newPos.y ;
+    object.position.z = -newPos.z ;
 
-    gameObject->scale = newScale;
+    object.scale = newScale;
     newRot.w = -newRot.w;
-    gameObject->rotation = glm::conjugate(newRot);
+    object.rotation = glm::conjugate(newRot);
 
 }
 
 void Editor::renderActiveScene(SceneManager &sceneManager) {
-
-
-
     ImGui::BeginTabBar("SceneOverview");
 
     if (ImGui::BeginTabItem("General")) {
@@ -1000,13 +1103,89 @@ void Editor::renderActiveScene(SceneManager &sceneManager) {
     ImGui::EndTabBar();
 }
 
+
+void Editor::renderLightProperties() {
+
+    if (currentSelectedLight != nullptr) {
+        ImGui::Text(" ");
+        ImGui::Text("Name: ");
+        ImGui::SameLine();
+        ImGui::PushID("lightN");
+        ImGui::InputText(" ", &currentSelectedLight->name);
+        ImGui::PopID();
+        ImGui::Text("Type: ");
+        switch (currentSelectedLight->lightType){
+            case 1:
+                ImGui::Text("Direct Light");
+                break;
+            case 2:
+                ImGui::Text("Point Light");
+                break;
+        }
+
+        ImGui::Text(" ");
+        if (ImGui::TreeNodeEx((ICON_FA_GEAR" TransFormation"), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
+            if (currentSelectedLight->lightType == 1) {
+                ImGui::Text("Angle: ");
+                ImGui::SameLine();
+                ImGui::PushID("lightA");
+                ImGui::DragFloat3(" ", currentSelectedLight->lightAngle, 0.1f);
+                ImGui::PopID();
+            } else {
+                float lightPos[3] = {currentSelectedLight->lightPosition_x,currentSelectedLight->lightPosition_y,currentSelectedLight->lightPosition_z};
+                ImGui::Text("Position: ");
+                ImGui::SameLine();
+                ImGui::PushID("LightP");
+                ImGui::DragFloat3(" ", lightPos, 0.5f);
+                currentSelectedLight->lightPosition_x = lightPos[0];
+                currentSelectedLight->lightPosition_y = lightPos[1];
+                currentSelectedLight->lightPosition_z = lightPos[2];
+                ImGui::PopID();
+            }
+
+
+            ImGui::TreePop();
+        }
+
+        ImGui::Text(" ");
+        if (ImGui::TreeNodeEx((ICON_FA_LIGHTBULB " Light Component"), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
+
+            ImGui::Text(" ");
+            ImGui::Text("Brightness: ");
+            ImGui::PushID("lightI");
+            float tli[1] = { currentSelectedLight->lightInten};
+            ImGui::DragFloat(" ", tli);
+            ImGui::PopID();
+            currentSelectedLight->lightInten= tli[0];
+            float lcolor[4] = {currentSelectedLight->lightColor_r,currentSelectedLight->lightColor_g,currentSelectedLight->lightColor_b,currentSelectedLight->lightColor_a};
+            ImGui::Text("Color: ");
+            ImGui::PushID("lightCp");
+            ImGui::ColorPicker4("", lcolor);
+            ImGui::PopID();
+            ImGui::PushID("lightC");
+            ImGui::DragFloat4(" ", lcolor);
+            ImGui::PopID();
+
+            currentSelectedLight->lightColor_r = lcolor[0];
+            currentSelectedLight->lightColor_g = lcolor[1];
+            currentSelectedLight->lightColor_b = lcolor[2];
+            currentSelectedLight->lightColor_a = lcolor[3];
+
+            ImGui::TreePop();
+        }
+
+    }
+
+}
+
+
 void Editor::createFBO(int width, int height) {
     glGenFramebuffers(1, &FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id, 0);
@@ -1053,7 +1232,7 @@ void Editor::resizeFrameBuffer(int newWidth, int newHeight) {
 
     if (newWidth > 0 && newHeight > 0) {
         glBindTexture(GL_TEXTURE_2D, texture_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, newWidth, newHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, newWidth, newHeight, 0, GL_RGBA, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id, 0);
@@ -1070,7 +1249,7 @@ bool Editor::allowCameraInput() {
     float sceneViewWidth = windowWidth[0] * 0.75f;
     float sceneViewHeight = windowHeight[0] * 0.65f;
 
-    return (windowWidth[0] > 0 && windowHeight[0] > 0 && !selectingComponents && mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
+    return (windowWidth[0] > 0 && windowHeight[0] > 0 && mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
 }
 
 void Editor::handleInputs(Camera &camera) {
@@ -1096,5 +1275,6 @@ void Editor::handleInputs(Camera &camera) {
 bool Editor::isWindowMinized() {
     return !(windowWidth[0] > 0 && windowHeight[0] > 0);
 }
+
 
 

@@ -27,15 +27,16 @@ void LightManager::updateShader(Shader& shader, std::shared_ptr<Scene> scene)
 		std::string curS = "lights[" + std::to_string(i) + "].castShadow";
 
 
-		Light& cLight = light.second;
+		auto cLight = light.second;
 		shader.Activate();
-		glUniform3f(glGetUniformLocation(shader.ID, curC.c_str()), cLight.lightColor_r, cLight.lightColor_g, cLight.lightColor_b);
-		glUniform3f(glGetUniformLocation(shader.ID, curP.c_str()), cLight.lightPosition_x, cLight.lightPosition_y, cLight.lightPosition_z);
-		glUniform1f(glGetUniformLocation(shader.ID, curI.c_str()), cLight.lightInten);
-		glUniform3f(glGetUniformLocation(shader.ID, curA.c_str()), cLight.lightAngle[0], cLight.lightAngle[1], cLight.lightAngle[2]);
-		glUniform1i(glGetUniformLocation(shader.ID, curT.c_str()), cLight.lightType);
-		glUniform1i(glGetUniformLocation(shader.ID, curS.c_str()), cLight.castShadow);
+		glUniform3f(glGetUniformLocation(shader.ID, curC.c_str()), cLight->lightColor_r, cLight->lightColor_g, cLight->lightColor_b);
+		glUniform3f(glGetUniformLocation(shader.ID, curP.c_str()), cLight->lightPosition_x, cLight->lightPosition_y, cLight->lightPosition_z);
+		glUniform1f(glGetUniformLocation(shader.ID, curI.c_str()), cLight->lightInten);
+		glUniform3f(glGetUniformLocation(shader.ID, curA.c_str()), cLight->lightAngle[0], cLight->lightAngle[1], cLight->lightAngle[2]);
+		glUniform1i(glGetUniformLocation(shader.ID, curT.c_str()), cLight->lightType);
+		glUniform1i(glGetUniformLocation(shader.ID, curS.c_str()), cLight->castShadow);
         i++;
+
 	}
 	
 }
@@ -49,19 +50,20 @@ void LightManager::deleteLight(std::shared_ptr<Scene> scene, string& id)
 
 
 void LightManager::InitScene(std::shared_ptr<Scene> scene) {
-    unordered_map<string, Light&> newMap;
+    unordered_map<string, std::shared_ptr<Light>> newMap;
     lightIdMap.emplace(scene->name, newMap);
 }
 
 void LightManager::createNewLight(std::shared_ptr<Scene> scene, Light &light) {
-        lightIdMap.at(scene->name).emplace(light.name, light);
-        placeId++;
+    auto newLight = std::make_shared<Light>(light);
+    lightIdMap.at(scene->name).emplace(light.name, newLight);
+    placeId++;
 }
 
-Light &LightManager::getLight(std::shared_ptr<Scene> scene, std::string name) {
+std::shared_ptr<Light> LightManager::getLight(std::shared_ptr<Scene> scene, std::string name) {
     for (auto i : lightIdMap.at(scene->name)) {
-        Light& light = i.second;
-        if (light.name.c_str() == name.c_str()) {
+        auto light = i.second;
+        if (light->name.c_str() == name.c_str()) {
             return light;
         }
     }

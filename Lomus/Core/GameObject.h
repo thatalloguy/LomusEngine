@@ -51,7 +51,7 @@ public:
 	std::vector<Collider*> colliders;
 	bool isPhysical = false;
     Model model;
-
+    bool castsShadow = true;
 
 private:
 	//Components

@@ -35,7 +35,7 @@ public:
 	void createNewLight(std::shared_ptr<Scene> scene, Light& light);
 
 
-    Light& getLight(std::shared_ptr<Scene> scene, std::string name);
+    std::shared_ptr<Light> getLight(std::shared_ptr<Scene> scene, std::string name);
 
 	void updateShader(Shader& shader, std::shared_ptr<Scene> scene);
 
@@ -43,7 +43,7 @@ public:
 
 
     int placeId = 0;
-    unordered_map<string, unordered_map<string, Light&>> lightIdMap;
+    unordered_map<string, unordered_map<string, std::shared_ptr<Light>>> lightIdMap;
 private:
 
 	bool castShadow = false;

@@ -52,22 +52,30 @@ namespace Lomus {
         float shadowFarPlane[1] = {25};
     private:
 
+        struct movableObject {
+            glm::vec3& position;
+            glm::quat& rotation;
+            glm::vec3& scale;
+        };
+
         void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);
         void renderTheFullEditor(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
 
         void renderSelectionPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
         void renderOtherPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
-
         void renderPropertiesPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
-        void renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject);
+
+        //Game Object
+        void renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject, Camera& camera);
         void renderActiveScene(SceneManager& sceneManager);
         void renderModelComponent(Model& model);
+        void renderLightProperties();
 
 
         void createFBO(int width, int height);
 
         void resizeFrameBuffer(int newWidth, int newHeight);
-        void manipulateGameObjectViaGizmo(std::shared_ptr<GameObject> gameObject, Camera& camera);
+        void manipulateObjectViaGizmo(movableObject& object, Camera& camera);
 
         void handleInputs(Camera& camera);
 
@@ -106,6 +114,8 @@ namespace Lomus {
         enum EditorState{gameObject,Scene,Light,Script}; // What Type of object is the engine displaying / editing
         enum SceneState {world, texteditor};
 
+
+        std::shared_ptr<Lomus::Light> currentSelectedLight = nullptr;
 
         EditorState currentState;
         SceneState currentSceneState = SceneState::world;

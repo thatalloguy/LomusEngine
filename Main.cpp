@@ -144,12 +144,12 @@ int main() {
     sceneManager.createNewScene("mainScene");
     sceneManager.setCurrentScene("mainScene");
 
-    GameObject trees(glm::vec3(0, -5.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, -1.0f, 1.0f), "Cube :)");
-    trees.createModel("../../Resources/Model/testCube/testCube.gltf");
+    GameObject trees(glm::vec3(0, -5.0f, 0), glm::quat(1.0f, 0.0, 0.0, 0.0), glm::vec3(3.0f, -3.0f, 3.0f), "Sphere :)");
+    trees.createModel("../../Resources/Model/Helmet/DamagedHelmet.gltf");
 
-    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(5.0f, -1.0f, 5.0f), "Sponza");
+    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f, -0.1f, 0.1f), "Sponza");
 
-    ground.createModel("../../Resources/Model/testCube/testCube.gltf");
+    ground.createModel("../../Resources/Model/Sponza/sponza.gltf");
 
 
     sceneManager.addGameObject(trees);
@@ -158,18 +158,30 @@ int main() {
 
 
     Light sun = Light{
-            0, 50, 0,
+            0, 0, 0,
             1,1, 1, 1,
-            1,
-            {-0.2f, -1.0f, -0.3f},
+            54,
+            {-0.18f, -3.8f, -0.2f},
             1,
             "Sun",
             true
     };
 
+
+    Light testLight = Light{
+        0, 5, 0,
+        1, 0, 1, 1,
+        5,
+        {0, 0, 0},
+        2,
+        "TestLight",
+        false
+    };
+
     LightManager lightManager;
     lightManager.InitScene(sceneManager.getCurrentScene());
     lightManager.createNewLight(sceneManager.getCurrentScene(), sun);
+    //lightManager.createNewLight(sceneManager.getCurrentScene(), testLight); // use later
     float gamma = 1.5f;
 
 
@@ -276,8 +288,8 @@ int main() {
         shadowMap.near_plane = editor.shadowNearPlane[0];
         shadowMap.far_plane  = editor.shadowFarPlane[0];
 
-        shadowMap.prepareRender(camera, sun, editor.windowWidth[0] * 0.745f, editor.windowHeight[0] * 0.745f);
-        sceneManager.renderCurrentScene(shadowMap.shadowMapShader, camera);
+        shadowMap.prepareRender(camera, sun, editor.windowWidth[0], editor.windowHeight[0]);
+        sceneManager.renderShadowMapScene(shadowMap.shadowMapShader, camera);
         shadowMap.unprepareRender(editor.windowWidth[0], editor.windowHeight[0]);
 
 
@@ -293,14 +305,7 @@ int main() {
         lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
         shadowMap.updateShader(shaderProgram, sun);
 
-        shaderProgram.Activate();
-        shaderProgram.setFloatUniform("sBaises", 0.05f);
-        shaderProgram.setFloatUniform("sampleSize", 1.0f);
 
-        shaderProgram.setFloatUniform("lAmbient", 0.20f);
-        glUniform1f(glGetUniformLocation(shaderProgram.ID, "castShadow"), 0.2);
-        glUniform1i(glGetUniformLocation(shaderProgram.ID, "lightType"), 1);
-        shaderProgram.setFloatUniform("gamma", gamma);
 
         sceneManager.renderCurrentScene(shaderProgram, camera);
 
