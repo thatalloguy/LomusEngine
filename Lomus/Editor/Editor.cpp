@@ -1207,7 +1207,7 @@ void Editor::createFBO(int width, int height) {
 void Editor::prepareFrameBuffer() {
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     // Specify the color of the background
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0.1, 0.1, 0.1, 1);
     // Clean the back buffer and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Enable depth testing since it's disabled when drawing the framebuffer rectangle

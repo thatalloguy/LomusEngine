@@ -39,6 +39,7 @@ public:
         isDeleted = false;
         rawPath = path;
         gammaCorrection = false;
+        exTextures.clear();
         return loadModel(path);
     }
 
@@ -59,9 +60,13 @@ public:
     }
     string rawPath;
     bool isDeleted = false;
+
     void Delete() {
-        meshes.clear();
         textures_loaded.clear();
+        for (auto mesh : meshes) {
+            mesh.Delete();
+        }
+        meshes.clear();
         isDeleted = true;
     }
 
@@ -198,12 +203,8 @@ private:
         std::vector<mTexture> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, "texture_emissive");
         textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
 
-        std::vector<mTexture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, "texture_ao");
-        textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
-
         mMaterial.useMetalRoughnessMap = !specularMaps.empty();
         mMaterial.useNormalMap = !normalMaps.empty();
-        mMaterial.useAOMap = !aoMaps.empty();
         mMaterial.useEmissivityMap = !emissiveMaps.empty();
 
 

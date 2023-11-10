@@ -55,6 +55,16 @@ public:
     vector<mTexture>      textures;
     unsigned int VAO;
 
+    void Delete() {
+        vertices.clear();
+        indices.clear();
+        textures.clear();
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }
+
+
     // constructor
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<mTexture> textures)
     {
