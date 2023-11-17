@@ -1,6 +1,6 @@
 # LomusEngine
 
-LomusEngine is a game engine written in C++ with Opengl 3.0 core.
+LomusEngine is a game engine written in C++ with Opengl 4.1 core
 
 # Core Engine Features:
 - GameObjects
