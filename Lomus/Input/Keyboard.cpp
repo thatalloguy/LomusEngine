@@ -6,6 +6,6 @@ Lomus::Keyboard &Lomus::Keyboard::getInstance() {
     return instance;
 }
 
-bool Lomus::Keyboard::isKeyPressed(GLFWwindow* window, Lomus::Keyboard::Key key) {
+bool Lomus::Keyboard::isKeyPressed(Lomus::Keyboard::Key key) {
     return (glfwGetKey(window, key) == GLFW_PRESS);
 }

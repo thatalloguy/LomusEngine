@@ -27,16 +27,20 @@ class Model
 {
 public:
     // model data
+    Lomus::Material mMaterial;
     vector<mTexture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     vector<Mesh>    meshes;
     string directory;
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    void load(string const &path)
+    bool load(string const &path)
     {
+        isDeleted = false;
+        rawPath = path;
         gammaCorrection = false;
-        loadModel(path);
+        exTextures.clear();
+        return loadModel(path);
     }
 
     void load(string const &path, map<string, string> texs) {
@@ -48,10 +52,26 @@ public:
     void Draw(Shader &shader, Lomus::Camera& camera, glm::mat4& matrix,
               glm::vec3& translation,
               glm::quat& rotation,
-              glm::vec3& scale)
+              glm::vec3& scale,
+              bool castShadow = true)
     {
         for(unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].Draw(shader, camera, matrix, translation, rotation, scale);
+            meshes[i].Draw(shader, camera, matrix, translation, rotation, scale, mMaterial, castShadow);
+    }
+    string rawPath;
+    bool isDeleted = false;
+
+    void Delete() {
+        textures_loaded.clear();
+        for (auto mesh : meshes) {
+            mesh.Delete();
+        }
+        meshes.clear();
+        isDeleted = true;
+    }
+
+    bool isEmpty() const {
+        return isDeleted;
     }
 
 private:
@@ -60,7 +80,7 @@ private:
 
 
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(string const &path)
+    bool loadModel(string const &path)
     {
         // read file via ASSIMP
         Assimp::Importer importer;
@@ -69,13 +89,15 @@ private:
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
             cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
-            return;
+            return false;
         }
         // retrieve the directory path of the filepath
         directory = path.substr(0, path.find_last_of('/'));
 
         // process ASSIMP's root node recursively
         processNode(scene->mRootNode, scene);
+
+        return true;
     }
 
     void processNode(aiNode *node, const aiScene *scene)
@@ -93,6 +115,7 @@ private:
         {
             processNode(node->mChildren[i], scene);
         }
+
 
     }
 
@@ -170,12 +193,19 @@ private:
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         // 4. height maps
         // 2. specular maps
-        vector<mTexture> specularMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_specular");
+        vector<mTexture> specularMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metaliness");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
 
         std::vector<mTexture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+
+        std::vector<mTexture> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, "texture_emissive");
+        textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
+
+        mMaterial.useMetalRoughnessMap = !specularMaps.empty();
+        mMaterial.useNormalMap = !normalMaps.empty();
+        mMaterial.useEmissivityMap = !emissiveMaps.empty();
 
 
         // Now we load external textures if the model type didnt specify it

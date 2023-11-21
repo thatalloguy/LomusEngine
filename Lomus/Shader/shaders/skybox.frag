@@ -1,14 +1,15 @@
 #version 330 core
 
 out vec4 FragColor;
+in vec3 localPos;
 
-in vec3 texCoords;
-
-uniform float gamma;
 uniform samplerCube skybox;
 
 void main() {
-	FragColor = texture(skybox, texCoords);
-	FragColor =  vec4(pow(FragColor.xyz, vec3(1.0f / gamma)), 1.0);
-}
+	    vec3 envColor = texture(skybox, localPos).rgb;
 
+        envColor = envColor / (envColor + vec3(1.0));
+        envColor = pow(envColor, vec3(1.0/2.2));
+
+        FragColor = vec4(envColor, 1.0);
+}

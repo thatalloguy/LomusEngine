@@ -6,48 +6,42 @@ struct Light {
     float lightInten;
     vec3 lightAngle;
     int lightType;
+    bool castShadow;
 };
 
 // Outputs colors in RGBA
 out vec4 FragColor;
 
-// Imports the current position from the Vertex Shader
-in vec3 crntPos;
-// Imports the normal from the Vertex Shader
+in vec3 WorldPos;
 in vec3 Normal;
-// Imports the color from the Vertex Shader
-in vec3 color;
-// Imports the texture coordinates from the Vertex Shader
-in vec2 texCoord;
-
+in vec2 TexCoords;
 in vec4 fragPosLight;
-in vec3 fragPos;
-in mat3 TBN;
-
-
-in vec3 TangentViewPos;
-in vec3 TangentFragPos;
 
 // Gets the Texture Units from the main function
-uniform sampler2D shadowMap;
 uniform sampler2D texture_diffuse0;
-uniform sampler2D texture_specular0;
+uniform sampler2D texture_metaliness0;
 uniform sampler2D texture_normal0;
+uniform sampler2D texture_emissive0;
+uniform sampler2D shadowMap;
 
-//uniform samplerCube shadowCubeMap;
-// Gets the color of the light from the main function
-uniform vec4 lightColor;
-// Gets the position of the light from the main function
-uniform vec3 lightPos;
-uniform float lightInten;
+// IBL
+uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+uniform sampler2D brdfLUT;
 
-// Gets the position of the camera from the main function
+
 uniform vec3 camPos;
-uniform bool isTransparent;
-uniform float farPlane;
-uniform int lightType;
-uniform vec2 fog;
-uniform int castShadow;
+
+uniform bool useNormalMap;
+uniform bool useMRMap;
+uniform bool useAOMap;
+uniform bool useEMap;
+
+uniform float metalAmplifier;
+uniform float roughnessAmplifier;
+uniform float aoAmplifier;
+uniform float emissiveAmplifier;
+
 
 uniform float gamma;
 uniform float sSamples;
@@ -55,15 +49,70 @@ uniform float sBaises;
 uniform float sOffset;
 uniform float lAmbient;
 uniform float shadowAmbient;
+uniform float sampleSize;
 
-uniform int numLights;
+uniform float numLights;
 uniform Light lights[100];
 
-uniform bool useNormalMap;
+const float PI = 3.14159265359;
 
-#define PI 3.1415926538
-uniform int shadeLevels;// 5
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
 
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+    projCoords = projCoords * 0.5 + 0.5;
+
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+
+    float currentDepth = projCoords.z;
+
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+
+    return shadow;
+}
+
+float VanDerCorput(uint n, uint base)
+{
+    float invBase = 1.0 / float(base);
+    float denom   = 1.0;
+    float result  = 0.0;
+
+    for(uint i = 0u; i < 32u; ++i)
+    {
+        if(n > 0u)
+        {
+            denom   = mod(float(n), 2.0);
+            result += denom * invBase;
+            invBase = invBase / 2.0;
+            n       = uint(float(n) / 2.0);
+        }
+    }
+
+    return result;
+}
+// ----------------------------------------------------------------------------
+vec2 Hammersley(uint i, uint N)
+{
+    return vec2(float(i)/float(N), VanDerCorput(i, 2u));
+}
+
+vec3 getNormalFromMap()
+{
+    vec3 tangentNormal = texture(texture_normal0, TexCoords).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx(WorldPos);
+    vec3 Q2  = dFdy(WorldPos);
+    vec2 st1 = dFdx(TexCoords);
+    vec2 st2 = dFdy(TexCoords);
+
+    vec3 N   = normalize(Normal);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B  = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
+}
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -104,176 +153,174 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
-// Fresnel-schlick function the real one fr fr
-vec3 F(vec3 F0, vec3 V, vec3 H) {
-    return F0 + (vec3(1.0) - F0) * pow(1 - max(dot(V, H), 0.0), 5.0);
-}
 
-
-
-
-float ShadowCalculation(vec4 fragPosLightSpace, Light light)
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 {
-    vec3 lightPos = vec3(light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]);
-    // perform perspective divide
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
-    // get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-    // calculate bias (based on depth map resolution and slope)
-    vec3 normal = normalize(Normal);
-    vec3 lightDir = normalize(lightPos - crntPos);
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;
-        }
-    }
-    shadow /= 9.0;
-
-    // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-    if(projCoords.z > 1.0)
-    shadow = 0.0;
-
-    return shadow;
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec4 pointLightB(Light light) {
-    vec3 fixedLightPos = vec3(light.lightPosition.x, light.lightPosition.y, light.lightPosition.z);
-    vec3 lightVec = fixedLightPos - fragPos;
 
-    // intensity of light with respect to distance
-    float dist = length(lightVec);
-    float a = 0.0003f;
-    float b = 0.00002f;
-    float inten = light.lightInten / (a * dist * dist + b * dist + 1.0f);
 
-    // ambient lighting
-    float ambient = lAmbient;//0.40f;
 
-    // diffuse lighting
+void main() {
+    vec3 albedo     = pow(texture(texture_diffuse0, TexCoords).rgb, vec3(2.2));
+    vec3 N;
+    float metallic;
+    float roughness;
+    float ao;
+    vec3 emissivity; 
+    ao = aoAmplifier;
 
-    vec3 normal;
-    //Normal maps
     if (useNormalMap) {
-        normal = texture(texture_normal0, texCoord).rgb ;//normalize(Normal);
-        normal =normal * 2.0 - 1.0;
-        normal = normalize(TBN * normal);
+        N     = getNormalFromMap(); // N = Normals
+    }else {
+        N = normalize(Normal);
+    }
+    if (useMRMap) {
+       metallic  = texture(texture_metaliness0, TexCoords).g * metalAmplifier;
+       roughness = texture(texture_metaliness0, TexCoords).b * roughnessAmplifier;
     } else {
-        normal = normalize(Normal);
+         metallic = max(metalAmplifier, 0.001);
+         roughness = roughnessAmplifier;
+    }
+	
+    if (useEMap) {
+        emissivity  = texture(texture_emissive0, TexCoords).rgb;
+    } else {
+        emissivity = vec3(0.1, 0.1, 0.1);
     }
 
+    vec3 V = normalize(camPos - WorldPos); // View Pos;
+    vec3 R = reflect(-V, N);
+
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, albedo, metallic);
+
+    vec3 Lo = vec3(0.0);
+    for (int i = 0; i < 2; i++) {
+
+            
+        if (lights[i].lightType == 1) { // Direct Light
+           vec3 L = normalize(-lights[i].lightAngle);
+           vec3 H = normalize(V + L);
+
+           vec3 radiance = lights[i].lightColor * lights[i].lightInten;
+
+           float NDF = DistributionGGX(N, H, roughness);
+           float G   = GeometrySmith(N, V, L, roughness);
+           vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+           vec3 numerator    = NDF * G * F;
+           float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+           vec3 specular = numerator / denominator;
+
+           vec3 kS = F;
+
+           vec3 kD = vec3(1.0) - kS;
+
+           kD *= 1.0 - metallic;
+
+           float NdotL = max(dot(N, L), 0.0);
 
 
+           float shadows = ShadowCalculation(fragPosLight);
 
+           Lo += ((kD * albedo / PI + specular) * radiance * NdotL) * 1.0 - shadows;
 
+        } else if (lights[i].lightType == 2) { // Point Light
+            vec3 L = normalize(-lights[i].lightPosition - WorldPos);
+            vec3 H = normalize(V + L);
+            float distance = length(-lights[i].lightPosition - WorldPos);
+            float attenuation = 1.0 / (distance * distance);
+            vec3 radiance = lights[i].lightColor * lights[i].lightInten  * 100 * attenuation;
 
-    vec3 lightDirection = normalize(light.lightPosition - fragPos);
-    float diffuse = max(dot(normal, lightDirection), 0.0f);
-    float level = floor(diffuse * shadeLevels);
-    //diffuse;// = level / shadeLevels;
+           float NDF = DistributionGGX(N, H, roughness);
+           float G   = GeometrySmith(N, V, L, roughness);
+           vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    vec3 newFragPos = fragPos;
-    vec3 newCamPos = camPos;
-    if (useNormalMap) {
-        newFragPos = TBN * fragPos;
-        newCamPos = TBN * camPos;
-    }
-    // specular lighting
-    float specular = 0.0f;
-    if (diffuse != 0.0f)
-    {
-        float specularLight = 0.50f;
-        vec3 viewDirection = normalize(camPos - newFragPos);
-        vec3 halfwayVec = normalize(viewDirection + lightDirection);
-        float specAmount = pow(max(dot(normal, halfwayVec), 0.0f), 16);
-        specular = specAmount * specularLight;
-    };
-    float shadow = 0;
-    //if (castShadow == 1) {
-    //    shadow = ShadowCubeCalculation(fragPos) * shadowAmbient;
-    //}
+           vec3 numerator    = NDF * G * F;
+           float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+           vec3 specular = numerator / denominator;
 
+           vec3 kS = F;
 
-    //
-    //texture(texture_diffuse0, texCoord);
-    float intensity = dot(lightDirection, normal);
-    vec4 color = (texture(texture_diffuse0, texCoord) * (diffuse * (1.0f - shadow) * inten + ambient) + texture(texture_specular0, texCoord).b * specular * (1.0f - shadow) * inten) * vec4(light.lightColor, 1);
+           vec3 kD = vec3(1.0) - kS;
 
-    return color;
+           kD *= 1.0 - metallic;
 
+           float NdotL = max(dot(N, L), 0.0);
 
+           Lo += ((kD * albedo / PI + specular) * radiance * NdotL);
 
-
-}
-
-vec4 directLight(Light light) {
-
-    vec3 color = texture(texture_diffuse0, texCoord).rgb;
-    vec3 normal = normalize(Normal);
-    vec3 lightColor = light.lightColor * light.lightInten;
-    // ambient
-    vec3 ambient = 0.2 * color;
-    // diffuse
-    vec3 lightDir = normalize(light.lightAngle - crntPos);
-    float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = diff * lightColor;
-    // specular
-    vec3 viewDir = normalize(camPos - crntPos);
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = 0.0;
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-    spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
-    vec3 specular = spec * lightColor;
-    // calculate shadow
-    float shadow = ShadowCalculation(fragPosLight, light);
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
-    return vec4(lighting, 1);
-}
-
-
-float linearizeDepth(float depth)
-{
-    float near = fog.x;
-    float far = fog.y;
-    return (2.0 * near * far) / (far + near - (depth * 2.0 - 1.0) * (far - near));
-}
-
-float logisticDepth(float depth)
-{
-    float steepness = 0.5f;
-    float offset = 5.0f;
-    float zVal = linearizeDepth(depth);
-    return (1 / (1 + exp(-steepness * (zVal - offset))));
-}
-
-void main()
-{
-
-    vec4 color = vec4(0);
-    // outputs final color
-    float depth = logisticDepth(gl_FragCoord.z);
-    for (int i=0; i<numLights; i++) {
-        Light light = lights[i];
-        if (light.lightType == 1) {
-            color += directLight(light);
-        } else if (light.lightType == 2) {
-            color += pointLightB(light);
-        } else {
-            color = vec4(1, 0, 0.68, 1);
         }
-
     }
-    color.a = 1;
-    FragColor =  vec4(pow(color.xyz, vec3(1.0f / gamma)), 1.0);
+    vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
 
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+
+    vec3 irradiance = texture(irradianceMap, N).rgb * aoAmplifier;
+    vec3 diffuse      = irradiance * albedo;
+
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+
+    vec3 ambient = (kD * diffuse + specular) * ao;
+
+    vec3 color = ambient + Lo + emissivity;
+
+    // HDR tonemapping
+    color = color / (color + vec3(1.0));
+    // gamma correct
+    color = pow(color, vec3(1.0/2.2));
+
+    FragColor = vec4(color , 1.0);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

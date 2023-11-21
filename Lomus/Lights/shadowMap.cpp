@@ -1,88 +1,6 @@
 
 #include "shadowMap.h"
 
-ShadowMap::ShadowMap(unsigned int width, unsigned int height)
-{
-    shadowMapHeight = height;
-    shadowMapWidth = width;
-
-    glGenFramebuffers(1, &shadowMapFBO);
-
-    glGenTextures(1, &my_shadowMap);
-    glBindTexture(GL_TEXTURE_2D, my_shadowMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-
-
-
-    // Prevents darkness outside the frustrum
-    float clampColor[] = { 0.0f, 1.0f, 1.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, clampColor);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, my_shadowMap, 0);
-    unsigned int fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "Framebuffer error: " << fboStatus << std::endl;
-
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-
-}
-
-void ShadowMap::updateProjection(glm::vec3& lightPos)
-{
-    float near_plane = 1.0f, far_plane = 7.5f;
-    orthgonalProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-    lightView = glm::lookAt(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    lightProjection = orthgonalProjection * lightView;
-    uploadProjectionToShader();
-}
-
-void ShadowMap::prepareRender()
-{
-    //glCullFace(GL_BACK);
-
-    glViewport(0, 0, shadowMapWidth, shadowMapHeight);
-    glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-}
-
-void ShadowMap::unprepareRender(float screenWidth, float screenHeight)
-{
-    //After scene done rendering
-    //glCullFace(GL_FRONT);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void ShadowMap::Delete()
-{
-    glDeleteFramebuffers(1, &shadowMapFBO);
-    shadowMapShader.Delete();
-}
-
-void ShadowMap::renderShadowBuffer(int width, int height)
-{
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, shadowMapFBO);
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-}
-
-void ShadowMap::uploadProjectionToShader()
-{
-    shadowMapShader.Activate();
-    glUniformMatrix4fv(glGetUniformLocation(shadowMapShader.ID, "lightProjection"), 1, GL_FALSE, glm::value_ptr(lightProjection));
-}
-
-
 
 
 ///CUBE MAP SHADOWS 
@@ -175,3 +93,108 @@ void cubeShadowMap::Delete()
 	glDeleteFramebuffers(1, &pointShadowMapFBO);
 }
 
+
+std::vector<glm::vec4> getFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view)
+{
+    const auto inv = glm::inverse(proj * view);
+
+    std::vector<glm::vec4> frustumCorners;
+    for (unsigned int x = 0; x < 2; ++x)
+    {
+        for (unsigned int y = 0; y < 2; ++y)
+        {
+            for (unsigned int z = 0; z < 2; ++z)
+            {
+                const glm::vec4 pt =
+                        inv * glm::vec4(
+                                2.0f * x - 1.0f,
+                                2.0f * y - 1.0f,
+                                2.0f * z - 1.0f,
+                                1.0f);
+                frustumCorners.push_back(pt / pt.w);
+            }
+        }
+    }
+
+    return frustumCorners;
+}
+
+/// NORMAL SHADOWS
+
+void ShadowMap::init(unsigned int width, unsigned int height) {
+    shadowMapWidth = width;
+    shadowMapHeight = height;
+    glGenFramebuffers(1, &depthMapFBO);
+    // create depth texture
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    // attach depth texture as FBO's depth buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+}
+
+void ShadowMap::unprepareRender(int width, int height) {
+    glCullFace(GL_BACK);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // reset viewport
+    glViewport(0, 0, width, height);
+}
+
+void ShadowMap::prepareRender(Camera &camera, Light &light, float resoWidth, float resoHeight) {
+    glViewport(0, 0, shadowMapWidth, shadowMapHeight);
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    camera.updateMatrix(45.0f, 0.1f, 1000.0f, resoWidth, resoHeight);
+    corners = getFrustumCornersWorldSpace(camera.projection, camera.view);
+    glm::vec3 center = glm::vec3(0, 0, 0);
+    for (const auto& v : corners)
+    {
+        center += glm::vec3(v);
+    }
+    center /= corners.size();
+
+    const auto mlightView = glm::lookAt(
+            center + glm::normalize(glm::vec3(light.lightAngle[0],light.lightAngle[1],light.lightAngle[2])),
+            center,
+            glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+    lightProjection = glm::ortho(-area, area, -area, area, near_plane, far_plane);
+    lightSpaceMatrix = lightProjection * mlightView;
+
+
+
+    // render scene from light's point of view
+    shadowMapShader.Activate();
+    shadowMapShader.setMat4Uniform("lightProjection", lightSpaceMatrix);
+    glCullFace(GL_FRONT);
+}
+
+void ShadowMap::updateShader(Shader &shader, Light& light) {
+    shader.Activate();
+    shader.setVec3Uniform("lightPos", light.lightPosition_x, light.lightPosition_y, light.lightPosition_z);
+    shader.setMat4Uniform("lightProjection", lightSpaceMatrix);
+
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    shader.setIntUniform("shadowMap", 5);
+}
+
+void ShadowMap::Delete() {
+    glDeleteTextures(1, &depthMap);
+    glDeleteFramebuffers(1, &depthMapFBO);
+    shadowMapShader.Delete();
+}

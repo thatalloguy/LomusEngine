@@ -22,6 +22,7 @@ namespace Lomus {
         float lightAngle[3];
         int lightType;
         std::string name;
+        bool castShadow;
     };
 
 }
@@ -29,20 +30,20 @@ class LightManager
 {
 public:
 	void Init();
-    void InitScene(Scene& scene);
+    void InitScene(std::shared_ptr<Scene> scene);
 	void Delete();
-	void createNewLight(Scene& scene, Light& light);
+	void createNewLight(std::shared_ptr<Scene> scene, Light& light);
 
 
-    Light& getLight(Scene& scene, std::string name);
+    std::shared_ptr<Light> getLight(std::shared_ptr<Scene> scene, std::string name);
 
-	void updateShader(Shader& shader, Scene& scene);
+	void updateShader(Shader& shader, std::shared_ptr<Scene> scene);
 
-	void deleteLight(Scene& scene, string& id);
+	void deleteLight(std::shared_ptr<Scene> scene, string& id);
 
 
     int placeId = 0;
-    unordered_map<string, unordered_map<string, Light&>> lightIdMap;
+    unordered_map<string, unordered_map<string, std::shared_ptr<Light>>> lightIdMap;
 private:
 
 	bool castShadow = false;

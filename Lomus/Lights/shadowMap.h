@@ -15,32 +15,29 @@ class ShadowMap
 {
 public:
 
-	ShadowMap(unsigned int width = 2048, unsigned int height = 2048);
+	void init(unsigned int width = 2048, unsigned int height = 2048);
 
-	void updateProjection(glm::vec3& lightPos);
+    void prepareRender(Camera& camera, Light& light, float resoWidth, float resoHeight);
+    void unprepareRender(int width, int height);
 
-	void prepareRender();
-	void unprepareRender(float screenWidth, float screenHeight);
-	void Delete();
+    void updateShader(Shader& shader, Light& light);
 
-    //void updateShader(Shader& shader);
+    void Delete();
 
-	void renderShadowBuffer(int width, int height);
+    unsigned int depthMap;
 
-	glm::mat4 lightProjection;
+    float near_plane = -200, far_plane = 20;
+    float area = 200;
 
-    unsigned int my_shadowMap;
 	Shader shadowMapShader{"../../Lomus/Shader/shaders/shadowMap.vert", "../../Lomus/Shader/shaders/shadowMap.frag"};
 private:
-	unsigned int shadowMapFBO;
+    unsigned int depthMapFBO;
+    vector<glm::vec4> corners;
 	unsigned int shadowMapWidth;
 	unsigned int shadowMapHeight;
+    glm::mat4 lightProjection, lightView;
+    glm::mat4 lightSpaceMatrix;
 
-
-	void uploadProjectionToShader();
-
-	glm::mat4 orthgonalProjection;
-	glm::mat4 lightView;
 
 
 	

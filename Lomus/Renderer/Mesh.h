@@ -25,6 +25,21 @@ struct Vertex {
     glm::vec3 Tangent;
     glm::vec3 Bitangent;
 };
+namespace Lomus {
+    struct Material {
+        float metalAmplifier = 1.0f;
+        float roughnessAmplifier = 1.0f;
+        float aoAmplifier = 1.0f;
+        float emissiveAmplifier = 1.0f;
+
+        bool useMetalRoughnessMap = false;
+        bool useAOMap = false;
+        bool useNormalMap = false;
+        bool useEmissivityMap = false;
+    };
+
+}
+
 
 struct mTexture {
     unsigned int id;
@@ -40,6 +55,16 @@ public:
     vector<mTexture>      textures;
     unsigned int VAO;
 
+    void Delete() {
+        vertices.clear();
+        indices.clear();
+        textures.clear();
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }
+
+
     // constructor
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<mTexture> textures)
     {
@@ -52,10 +77,12 @@ public:
 
     // render the mesh
     void Draw(Shader &shader, Lomus::Camera& camera,
-              glm::mat4& matrix,
-              glm::vec3& translation,
-              glm::quat& rotation,
-              glm::vec3& scale)
+              glm::mat4 matrix,
+              glm::vec3 translation,
+              glm::quat rotation,
+              glm::vec3 scale,
+              Lomus::Material& material,
+              bool castShadow)
     {
         for(unsigned int i = 0; i < textures.size(); i++)
         {
@@ -69,11 +96,24 @@ public:
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
+        shader.setIntUniform("useMR", material.useMetalRoughnessMap);
+        shader.setIntUniform("useAOMap", material.useAOMap);
+        shader.setIntUniform("useNormalMap", material.useNormalMap);
+        shader.setIntUniform("useEMap", material.useEmissivityMap);
+
+        shader.setFloatUniform("metalAmplifier", material.metalAmplifier);
+        shader.setFloatUniform("roughnessAmplifier", material.roughnessAmplifier);
+        shader.setFloatUniform("aoAmplifier", material.aoAmplifier);
+        shader.setFloatUniform("emissiveAmplifier", material.emissiveAmplifier);
 
         glUniform3f(glGetUniformLocation(shader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
         camera.Matrix(shader, "camMatrix");
 
         // Initialize matrices
+
+        GLint modelLoc = glGetUniformLocation(shader.ID, "model");
+
+
         glm::mat4 trans = glm::mat4(1.0f);
         glm::mat4 rot = glm::mat4(1.0f);
         glm::mat4 sca = glm::mat4(1.0f);
@@ -84,27 +124,19 @@ public:
         rot = glm::mat4_cast(rotation);
         sca = glm::scale(sca, scale);
 
+        matrix = trans * -rot * sca;
 
-        GLint transLoc = glGetUniformLocation(shader.ID, "translation");
-        GLint rotLoc = glGetUniformLocation(shader.ID, "rotation");
-        GLint scaleLoc = glGetUniformLocation(shader.ID, "scale");
-        GLint modelLoc = glGetUniformLocation(shader.ID, "model");
+        glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(matrix)));
 
-        if (transLoc == -1 && scaleLoc  == -1 && rotLoc == -1) {
-            std::cerr << "Invalid Shader!\n";
-        } if (modelLoc != -1 && transLoc != -1 && scaleLoc != -1 && rotLoc != -1) {
-            std::cout << "jippy!\n";
-        }
-
-        glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans));
-        glUniformMatrix4fv(scaleLoc, 1, GL_FALSE, glm::value_ptr(sca));
-        glUniformMatrix4fv(rotLoc, 1, GL_FALSE, glm::value_ptr(rot));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(matrix));
+        glUniformMatrix3fv(shader.getUniformLocation("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
         // draw mesh
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
+
+
 
         // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
