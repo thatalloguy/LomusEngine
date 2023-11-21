@@ -1,13 +1,21 @@
+#define IMGUI_DEFINE_MATH_OPERATORS
+#define NOMINMAX
 
 #include <iostream>
+#include <algorithm>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/type_ptr.hpp>
-#include <stdio.h>
+
+
+//Imgui
+#include "Thirdparty/imgui/imgui_impl_glfw.h"
+#include "Thirdparty/imgui/imgui_impl_opengl3.h"
 
 #include <reactphysics3d/reactphysics3d.h>
 #include "Libs/Include/stb/std_image.h"
+#include <glm/gtc/random.hpp>
 
 //Engine
 #include "Lomus/Renderer/Texture.h"
@@ -26,16 +34,159 @@
 #include "Lomus/Physics/DebugVAO.h"
 
 #include "Lomus/Editor/Editor.h"
+#include "Lomus/Lights/Shadows/Shadows.hpp"
 
-//Imgui
-#include "Thirdparty/imgui/imgui.h"
-#include "Thirdparty/imgui/imgui_impl_glfw.h"
-#include "Thirdparty/imgui/imgui_impl_opengl3.h"
 
 using namespace Lomus;
 int width;
 int height;
+unsigned int samples = 8;
 
+unsigned int lightFBO;
+unsigned int lightDepthMaps;
+constexpr unsigned int depthMapResolution = 4096;
+
+float cameraFarPlane = 500.0f;
+float cameraNearPlane = 0.1f;
+
+std::vector<float> shadowCascadeLevels{ cameraFarPlane / 50.0f, cameraFarPlane / 25.0f, cameraFarPlane / 10.0f, cameraFarPlane / 2.0f };
+int debugLayer = 0;
+
+std::vector<glm::mat4> lightMatricesCache;
+const glm::vec3 lightDir = glm::normalize(glm::vec3(20.0f, 50, 20.0f));
+
+std::vector<glm::vec4> getTFrustumCornersWorldSpace(const glm::mat4& projview)
+{
+    const auto inv = glm::inverse(projview);
+
+    std::vector<glm::vec4> frustumCorners;
+    for (unsigned int x = 0; x < 2; ++x)
+    {
+        for (unsigned int y = 0; y < 2; ++y)
+        {
+            for (unsigned int z = 0; z < 2; ++z)
+            {
+                const glm::vec4 pt = inv * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f, 1.0f);
+                frustumCorners.push_back(pt / pt.w);
+            }
+        }
+    }
+
+    return frustumCorners;
+}
+
+
+std::vector<glm::vec4> getLightFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view)
+{
+    return getTFrustumCornersWorldSpace(proj * view);
+}
+
+glm::mat4 getLightSpaceMatrix(Lomus::Camera& camera, const float nearPlane, const float farPlane,float width,float height)
+{
+    const auto proj = glm::perspective(
+            45.0f, (float)width / (float)height, nearPlane,
+            farPlane);
+    const auto corners = getLightFrustumCornersWorldSpace(proj, camera.view);
+
+    glm::vec3 center = glm::vec3(0, 0, 0);
+    for (const auto& v : corners)
+    {
+        center += glm::vec3(v);
+    }
+    center /= corners.size();
+
+    const auto lightView = glm::lookAt(center + lightDir, center, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    float minX = std::numeric_limits<float>::max();
+    float maxX = std::numeric_limits<float>::lowest();
+    float minY = std::numeric_limits<float>::max();
+    float maxY = std::numeric_limits<float>::lowest();
+    float minZ = std::numeric_limits<float>::max();
+    float maxZ = std::numeric_limits<float>::lowest();
+    for (const auto& v : corners)
+    {
+        const auto trf = lightView * v;
+        minX = std::min(minX, trf.x);
+        maxX = std::max(maxX, trf.x);
+        minY = std::min(minY, trf.y);
+        maxY = std::max(maxY, trf.y);
+        minZ = std::min(minZ, trf.z);
+        maxZ = std::max(maxZ, trf.z);
+    }
+
+    // Tune this parameter according to the scene
+    constexpr float zMult = 10.0f;
+    if (minZ < 0)
+    {
+        minZ *= zMult;
+    }
+    else
+    {
+        minZ /= zMult;
+    }
+    if (maxZ < 0)
+    {
+        maxZ /= zMult;
+    }
+    else
+    {
+        maxZ *= zMult;
+    }
+
+    const glm::mat4 lightProjection = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+    return lightProjection * lightView;
+}
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderDebugQuad()
+{
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+                // positions        // texture Coords
+                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
+
+std::vector<glm::mat4> getLightSpaceMatrices(Lomus::Camera& camera, float width, float height)
+{
+    std::vector<glm::mat4> ret;
+    for (size_t i = 0; i < shadowCascadeLevels.size() + 1; ++i)
+    {
+        if (i == 0)
+        {
+            ret.push_back(getLightSpaceMatrix(camera, cameraNearPlane, shadowCascadeLevels[i], width, height));
+        }
+        else if (i < shadowCascadeLevels.size())
+        {
+            ret.push_back(getLightSpaceMatrix(camera, shadowCascadeLevels[i - 1], shadowCascadeLevels[i], width, height));
+        }
+        else
+        {
+            ret.push_back(getLightSpaceMatrix(camera, shadowCascadeLevels[i - 1], cameraFarPlane, width, height));
+        }
+    }
+    return ret;
+}
 
 
 static bool GLLogCall(const char* function, const char* file, int line) {
@@ -53,11 +204,10 @@ void mySillyFunction(std::vector<std::string> args, Camera& camera, SceneManager
     console.addConsoleLog(message.c_str());
 }
 
-
-
 int main() {
     //EDITOR VERSION
 
+    spdlog::info("Hello World!");
 
     //Window init
     glfwInit();
@@ -100,6 +250,13 @@ int main() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.Fonts->AddFontDefault();
+
+    ImFontConfig config;
+    config.MergeMode = true;
+    config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+    static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    io.Fonts->AddFontFromFileTTF("../../Lomus/Resources/Font/forkawesome-webfont.ttf", 13.0f, &config, icon_ranges);
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
@@ -109,11 +266,12 @@ int main() {
     //Camera and init of shaders
 
     Shader shaderProgram("../../Lomus/Shader/shaders/default.vert", "../../Lomus/Shader/shaders/default.frag");
+    Shader framebufferProgram("../../Lomus/Shader/shaders/framebuffer.vert", "../../Lomus/Shader/shaders/framebuffer.frag");
+    framebufferProgram.Activate();
+    glUniform1i(glGetUniformLocation(framebufferProgram.ID, "screenTexture"), 0);
+    glUniform1f(glGetUniformLocation(framebufferProgram.ID, "gamma"), 2.2f);
 
 
-    shaderProgram.Activate();
-    glUniform1f(glGetUniformLocation(shaderProgram.ID, "castShadow"), 0.2);
-    glUniform1i(glGetUniformLocation(shaderProgram.ID, "lightType"), 1);
 
     Camera camera(window_width, window_height, glm::vec3(0.0f, 0.0f, 2.0f));
 
@@ -123,70 +281,61 @@ int main() {
     sceneManager.createNewScene("mainScene");
     sceneManager.setCurrentScene("mainScene");
 
-    GameObject trees(glm::vec3(0, -20.0f, 0), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(9.0f, -4.0f, 7.0f), "Astronaut");
-    trees.createModel("../../Resources/Model/Astronaut/astronaut.obj");
-    GameObject ground(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(100.1f, -1.1f, 100.1f), "Sponza");
+    GameObject trees(glm::vec3(0, -5.0f, 0), glm::quat(1.0f, 0.0, 0.0, 0.0), glm::vec3(3.0f, -3.0f, 3.0f), "Cube :)");
+    trees.createModel("../../Resources/Model/testCube/testCube.gltf");
 
-    ground.createModel("../../Resources/Model/tree_ground/scene.gltf");
+    GameObject ground(glm::vec3(0.0f, 5.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(30.0f, -1.0f, 30.0f), "Ground");
+
+    ground.createModel("../../Resources/Model/testCube/testCube.gltf");
 
 
-    sceneManager.addGameObject(trees, 1);
-    sceneManager.addGameObject(ground, 2);
+    sceneManager.addGameObject(trees);
+    sceneManager.addGameObject(ground);
 
 
 
     Light sun = Light{
-            0, 50, 0,
+            0, 0, 0,
             1,1, 1, 1,
+            54,
+            {0.0f, 0.0f, 0.0f},
             1,
-            {1, 360, 1},
-            1,
-            "Sun"
+            "Sun",
+            true
+    };
+
+
+    Light testLight = Light{
+        0, 5, 0,
+        1, 0, 1, 1,
+        5,
+        {0, 0, 0},
+        2,
+        "TestLight",
+        false
     };
 
     LightManager lightManager;
     lightManager.InitScene(sceneManager.getCurrentScene());
     lightManager.createNewLight(sceneManager.getCurrentScene(), sun);
+    //lightManager.createNewLight(sceneManager.getCurrentScene(), testLight); // use later
     float gamma = 1.5f;
-    shaderProgram.setFloatUniform("gamma", gamma);
 
 
 
-    Skybox skybox;
-    skybox.Init();
 
 
-    //Shadow - 11th time
-
-    Shader shadowShader("../../Lomus/Shader/shaders/shadowMap.vert", "../../Lomus/Shader/shaders/shadowMap.frag");
-    glm::vec3 tempVec = glm::vec3(sun.lightPosition_x, sun.lightPosition_y, sun.lightPosition_z);
-
-    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
-    unsigned int depthMapFBO;
-    glGenFramebuffers(1, &depthMapFBO);
-    // create depth texture
-    unsigned int depthMap;
-    glGenTextures(1, &depthMap);
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    //float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-    //glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    // attach depth texture as FBO's depth buffer
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //Skybox skybox;
+    //skybox.Init();
 
 
-    glm::mat4 lightProjection, lightView;
-    glm::mat4 lightSpaceMatrix;
-    float near_plane = 1.0f, far_plane = 1000.0f;
+    //Shadow
 
+    ShadowMap shadowMap;
+    shadowMap.init();
+    shadowMap.far_plane = 26.0f;
+    shadowMap.near_plane = -52.0f;
+    shadowMap.area = 102;
     //fps counter
     double prevTime = 0.0;
     double crntTime = 0.0;
@@ -203,7 +352,7 @@ int main() {
 
 
 
-    Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene().world);
+    Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene()->world);
 
 
 
@@ -225,21 +374,70 @@ int main() {
 
 
     /// EDITORRR
-    Lomus::Editor editor;
-    editor.Init(sceneManager);
-
+    Lomus::Editor editor(window, Lomus::Editor::Clean);
+    editor.setShader(1, shaderProgram);
 
     std::string temp = "light1";
 
-    Shader outline("../../Lomus/Shader/shaders/outline.vert", "../../Lomus/Shader/shaders/outline.frag");
     //load some shader stuff
     shaderProgram.Activate();
-    shaderProgram.setFloatUniform("sSamples", 8.0f);
-    shaderProgram.setFloatUniform("sBiases", 100.0f);
-    shaderProgram.setFloatUniform("sOffset", 20.7f);
-    shaderProgram.setFloatUniform("shadowAmbient", 1.0f);
+    shaderProgram.setFloatUniform("sBiases", 0.05f);
+    shaderProgram.setFloatUniform("sampleSize", 1.0f);
 
     shaderProgram.setFloatUniform("lAmbient", 0.20f);
+
+    glm::mat4 gridModel;
+    editor.shadowTexture = shadowMap.depthMap;
+
+    sceneManager.initHDRmap("../../Lomus/Shader/shaders/Resources/Skyboxes/hdr/default3.hdr");
+
+
+    // Cascaded Shadow Mapping
+    Shader simpleDepthShader("../../Lomus/Shader/shaders/cascadedShadows.vert","../../Lomus/Shader/shaders/cascadedShadows.frag","../../Lomus/Shader/shaders/cascadedShadows.geom");
+        
+
+    glGenFramebuffers(1, &lightFBO);
+
+    glGenTextures(1, &lightDepthMaps);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, lightDepthMaps);
+    glTexImage3D(
+            GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, depthMapResolution, depthMapResolution, int(shadowCascadeLevels.size()) + 1,
+            0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+    constexpr float bordercolor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, bordercolor);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, lightFBO);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, lightDepthMaps, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
+    {
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!";
+        throw 0;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // configure UBO
+    // --------------------
+    unsigned int matricesUBO;
+    glGenBuffers(1, &matricesUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4x4) * 16, nullptr, GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, matricesUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    bool showQuad = true;
+
+    Shader debugDepthQuad("../../Lomus/Shader/shaders/framebuffer.vert","../../Lomus/Shader/shaders/debugShadow.frag");
 
 
 
@@ -272,68 +470,94 @@ int main() {
         }
 
         // First update shadow projection
-        tempVec.x = sun.lightPosition_x;
-        tempVec.y = sun.lightPosition_y;
-        tempVec.z = sun.lightPosition_z;
+        shadowMap.area       = editor.shadowArea[0];
+        shadowMap.near_plane = editor.shadowNearPlane[0];
+        shadowMap.far_plane  = editor.shadowFarPlane[0];
 
+        //shadowMap.prepareRender(camera, sun, editor.windowWidth[0], editor.windowHeight[0]);
+        //sceneManager.renderShadowMapScene(shadowMap.shadowMapShader, camera);
 
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // 0. UBO setup
+        const auto lightMatrices = getLightSpaceMatrices(camera, editor.windowWidth[0],editor.windowHeight[0]);
+        glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
+        for (size_t i = 0; i < lightMatrices.size(); ++i)
+        {
+            glBufferSubData(GL_UNIFORM_BUFFER, i * sizeof(glm::mat4x4), sizeof(glm::mat4x4), &lightMatrices[i]);
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-        lightView = glm::lookAt(tempVec, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-        lightSpaceMatrix = lightProjection * lightView;
+        // 1. render depth of scene to texture (from light's perspective)
+        // --------------------------------------------------------------
+        //lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
         // render scene from light's point of view
-        shadowShader.Activate();
-        shadowShader.setMat4Uniform("lightProjection", lightSpaceMatrix);
+        simpleDepthShader.Activate();
 
-        sceneManager.renderCurrentScene(shadowShader, camera);
+        glBindFramebuffer(GL_FRAMEBUFFER, lightFBO);
+        glViewport(0, 0, depthMapResolution, depthMapResolution);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glCullFace(GL_FRONT);  // peter panning
 
+
+        sceneManager.renderCurrentScene(simpleDepthShader, camera);
+
+
+        glCullFace(GL_BACK);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // reset viewport
-        glViewport(0, 0, width, height);
-
-
-
-        // Normal Render Loop
-
+        glViewport(0, 0, editor.windowWidth[0], editor.windowHeight[0]);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        if (!editor.visible) {
-            camera.Inputs(window);
+
+
+
+
+
+        editor.prepareFrameBuffer();
+        if (editor.allowCameraInput()) {
+            camera.Inputs(window, (editor.windowWidth[0] * 0.75f) / 2, (editor.windowHeight[0] * 0.65f) / 2, timeDiff);
+            ImGui::SetMouseCursor(ImGuiMouseCursor_None);
         }
 
-        camera.updateMatrix(45.0f, 0.1f, 1000.0f);
-        lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
-        // Send the light matrix to the shader
-        shaderProgram.Activate();
-        shaderProgram.setVec3Uniform("lightPos", tempVec.x,tempVec.y,tempVec.z);
-        shaderProgram.setMat4Uniform("lightProjection", lightSpaceMatrix);
 
-        glActiveTexture(GL_TEXTURE0 + 4);
-        glBindTexture(GL_TEXTURE_2D, depthMap);
-        shaderProgram.setIntUniform("shadowMap", 4);
+
+        lightManager.updateShader(shaderProgram, sceneManager.getCurrentScene());
+        shaderProgram.Activate();
 
         sceneManager.renderCurrentScene(shaderProgram, camera);
+        //lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics)
+        //skybox.Render(camera, width, height, gamma);
 
-        ///lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics);
+        debugDepthQuad.Activate();
+        debugDepthQuad.setIntUniform("layer", debugLayer);
+        debugDepthQuad.setIntUniform("depthMap", 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, lightDepthMaps);
+        if (showQuad)
+        {
+            renderDebugQuad();
+        }
 
 
-        skybox.Render(camera, width, height, gamma);
+
+        editor.unprepareFrameBuffer();
 
         // Init imgui
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
 
 
 
 
-        editor.Render(sceneManager, lightManager, window, shaderProgram, outline, camera, window_width, window_height, EditorMode::debug);
-/////        std::cout << "astronaut:" << trees.position.x << " | " << trees.position.y << " | " << trees.position.z << "\n";
+
+        editor.Render(sceneManager, lightManager, camera, EditorMode::editor);
+
+
+
         //Imgui render
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -347,12 +571,17 @@ int main() {
     // Clean Up Phase
 
     //modelTest.cleanUp();
-    skybox.Delete();
+    shadowMap.Delete();
+    //skybox.Delete();
     lightManager.Delete();
     shaderProgram.Delete();
+    shadowMap.Delete();
     sceneManager.Delete();
     lDebugRenderer.Delete();
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }
+
+
+
