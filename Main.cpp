@@ -142,21 +142,21 @@ int main() {
     sceneManager.createNewScene("mainScene");
     sceneManager.setCurrentScene("mainScene");
 
-    GameObject trees(glm::vec3(0, -5.0f, 0), glm::quat(1.0f, 0.0, 0.0, 0.0), glm::vec3(3.0f, -3.0f, 3.0f), "Helmet :)");
-    trees.createModel("../../Resources/Model/Helmet/DamagedHelmet.gltf");
+    GameObject helmet(glm::vec3(0, -5.0f, 0), glm::quat(1.0f, 0.0, 0.0, 0.0), glm::vec3(3.0f, -3.0f, 3.0f), "Helmet :)");
+    helmet.createModel("../../Resources/Model/Helmet/DamagedHelmet.gltf");
 
     GameObject ground(glm::vec3(0.0f, 5.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(10.0f, -1.0f, 10.0f), "Ground");
 
     ground.createModel("../../Resources/Model/testCube/testCube.gltf");
 
 
-    sceneManager.addGameObject(trees);
+    sceneManager.addGameObject(helmet);
     sceneManager.addGameObject(ground);
 
 
 
     Light sun = Light{
-            0, 0, 0,
+            0, 10, 0,
             1,1, 1, 1,
             54,
             {-0.18f, -3.8f, -0.2f},
@@ -167,13 +167,13 @@ int main() {
 
 
     Light testLight = Light{
-        0, 5, 0,
-        1, 0, 1, 1,
-        5,
-        {0, 0, 0},
-        2,
-        "TestLight",
-        false
+            0, 5, 0,
+            1, 0, 1, 1,
+            5,
+            {0, 0, 0},
+            2,
+            "TestLight",
+            false
     };
 
     LightManager lightManager;
@@ -204,16 +204,21 @@ int main() {
     unsigned int counter = 0;
 
 
-    sceneManager.doPhysics = false;
+    sceneManager.doPhysics = true;
     //Physics
-    sceneManager.createRigidBody(1, BodyType::DYNAMIC); // MONKEY
+    sceneManager.createRigidBody(ground.id, BodyType::STATIC); // Ground
+    sceneManager.createRigidBody(helmet.id, BodyType::DYNAMIC);
 
     Transform transform;
-    sceneManager.addCollisionCapsuleShape(1, 1, 5, transform);
+    Vector3 tvec3(ground.scale.x, (ground.scale.y * ground.scale.y),ground.scale.z);
+    sceneManager.addCollisionBoxShape(ground.id, tvec3, transform);
+
+    Transform transform1;
+    sceneManager.addCollisionBoxShape(helmet.id, Vector3(2, 2, 2), transform1);
 
 
 
-    Lomus::DebugRenderer lDebugRenderer(sceneManager.getCurrentScene()->world);
+    Lomus::DRay lDebugRenderer(sceneManager.getCurrentScene()->world);
 
 
 
@@ -235,7 +240,7 @@ int main() {
 
 
     /// EDITORRR
-    Lomus::Editor editor(window, Lomus::Editor::Clean);
+    Lomus::Editor editor(window, Lomus::Editor::Clean, sceneManager);
     editor.setShader(1, shaderProgram);
 
     std::string temp = "light1";
@@ -248,9 +253,49 @@ int main() {
     shaderProgram.setFloatUniform("lAmbient", 0.20f);
 
     glm::mat4 gridModel;
-    editor.shadowTexture = shadowMap.depthMap;
 
-    sceneManager.initHDRmap("../../Lomus/Shader/shaders/Resources/Skyboxes/hdr/default2.hdr");
+    sceneManager.initHDRmap("../../Lomus/Shader/shaders/Resources/Skyboxes/hdr/default3.hdr");
+
+
+
+    //Shadows bad
+
+    unsigned int shadowMapFBO;
+    glGenFramebuffers(1, &shadowMapFBO);
+
+    unsigned int shadowMapWidth = 2048, shadowMapHeight = 2048;
+    unsigned int shadowMapTexture;
+
+    glGenTextures(1, &shadowMapTexture);
+    glBindTexture(GL_TEXTURE_2D, shadowMapTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float clampColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, clampColor);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMapTexture, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    float near_plane = 0.1f;
+    float far_plane = 500.0f;
+    float area = 35.0f;
+
+    glm::mat4 lightProjection;
+    glm::mat4 lightView;
+
+    glm::mat4 lightMatrix;
+    editor.shadowTexture = shadowMapTexture;
+
+    Shader mShadowShader("../../Lomus/Shader/shaders/shadowMap.vert", "../../Lomus/Shader/shaders/shadowMap.frag");
+
+    ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_DockingEnable;
 
     while (!glfwWindowShouldClose(window)) {
 
@@ -276,19 +321,37 @@ int main() {
 
 
         }
-        if (sceneManager.doPhysics) {
-            sceneManager.UpdatePhysicsWorld(timeDiff);
-        }
 
         // First update shadow projection
         shadowMap.area       = editor.shadowArea[0];
         shadowMap.near_plane = editor.shadowNearPlane[0];
         shadowMap.far_plane  = editor.shadowFarPlane[0];
 
+        lightProjection = glm::ortho(-area, area, -area, area, near_plane, far_plane);
+        lightView = glm::lookAt(camera.Position, glm::vec3(0,0,0), glm::vec3(0, 1, 0));
+
+        lightMatrix = lightProjection * lightView;
+
+
+
+
         shadowMap.prepareRender(camera, sun, editor.windowWidth[0], editor.windowHeight[0]);
-        sceneManager.renderShadowMapScene(shadowMap.shadowMapShader, camera);
+        //sceneManager.renderCurrentScene(shadowMap.shadowMapShader, camera);
         shadowMap.unprepareRender(editor.windowWidth[0], editor.windowHeight[0]);
 
+        glEnable(GL_DEPTH_TEST);
+
+        glViewport(0, 0, shadowMapWidth, shadowMapHeight);
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        mShadowShader.Activate();
+        mShadowShader.setMat4Uniform("lightProjection", lightMatrix);
+        sceneManager.renderCurrentScene(mShadowShader, camera);
+
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, editor.windowWidth[0], editor.windowHeight[0]);
 
 
         editor.prepareFrameBuffer();
@@ -304,9 +367,16 @@ int main() {
 
 
         sceneManager.renderCurrentScene(shaderProgram, camera);
-        //lDebugRenderer.Render(sceneManager.getCurrentScene().world, camera, sceneManager.doPhysics)
-        //skybox.Render(camera, width, height, gamma);
+        if (editor.doDebugRenderer()) {
+            sceneManager.refreshRigdBodiesTransforms();
+            lDebugRenderer.Render(sceneManager.getCurrentScene()->world, camera, !editor.isGameRunning());
+        }
 
+        if (editor.isGameRunning()) {
+            sceneManager.UpdatePhysicsWorld(timeDiff);
+
+            // Running scripts goes here
+        }
 
 
 
@@ -318,10 +388,6 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
-
-
-
-
 
         editor.Render(sceneManager, lightManager, camera, EditorMode::editor);
 
@@ -342,15 +408,18 @@ int main() {
     //modelTest.cleanUp();
 
     //skybox.Delete();
+
     lightManager.Delete();
+
     shaderProgram.Delete();
+
     shadowMap.Delete();
-    sceneManager.Delete();
+
     lDebugRenderer.Delete();
+
     glfwDestroyWindow(window);
     glfwTerminate();
+
+    sceneManager.Delete();
     return 0;
 }
-
-
-
