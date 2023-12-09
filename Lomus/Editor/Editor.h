@@ -4,24 +4,73 @@
 #include "../../Thirdparty/imgui/IconsFontAwesome6.h"
 #include "../../Thirdparty/imgui/ImGuiFileBrowser.h"
 
+#include "../../Thirdparty/ImGuiColorTextEdit/TextEditor.h"
 
 #include "../Core/SceneManager.h"
 #include "../Lights/LightManager.h"
 #include "../Core/Console.h"
 #include "../Shader/ShaderClass.h"
 #include "../Utils/ToolBox.h"
+#include "../Input/Keyboard.h"
 
 #include "ShaderEditor.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtx/matrix_decompose.hpp>
-#include "../Input/Keyboard.h"
-#include "../../Thirdparty/ImGuiColorTextEdit/TextEditor.h"
+#include <spdlog/spdlog.h>
 
 namespace Lomus {
 
 
     enum EditorMode{debug,editor,shader};
+
+    struct ToggleButton{
+
+        bool isActive = false;
+        const char* hoverText = "A toggle button";
+        ImVec4 activeColor = ImVec4(1, 1, 1, 1);
+        ImVec4 passiveColor = ImVec4(1, 1, 1, 1);
+
+        bool click= false;
+
+        void Render(const char* defaultText, const char* activeText) {
+            ImGuiStyle& style = ImGui::GetStyle();
+            click= false;
+            if (isActive) {
+
+                style.Colors[ImGuiCol_Text] = activeColor;
+
+                if (ImGui::Button(activeText, ImVec2(21, 20))) {
+                    click = true;
+                    isActive = false;
+                }
+                style.Colors[ImGuiCol_Text] = ImVec4(1, 1, 1, 1);
+
+            } else{
+
+                style.Colors[ImGuiCol_Text] = passiveColor;
+
+                if (ImGui::Button(defaultText, ImVec2(21, 20))) {
+                    click = true;
+                    isActive = true;
+                }
+
+                style.Colors[ImGuiCol_Text] = ImVec4(1, 1, 1, 1);
+            }
+
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip(hoverText);
+            }
+        }
+
+
+    };
+
+
+    struct UIWindow{
+        float x, y, width, height;
+    };
+
 
     class Editor {
 
@@ -29,7 +78,7 @@ namespace Lomus {
     public:
 
         enum EditorStyle{Clean,Unreal,Ocean,Space};
-        Editor(GLFWwindow *window, EditorStyle style);
+        Editor(GLFWwindow *window, EditorStyle style, SceneManager& sceneManager);
 
         void Delete(SceneManager& sceneManager);
         void prepareFrameBuffer();
@@ -40,6 +89,11 @@ namespace Lomus {
         bool isWindowMinized();
 
         bool allowCameraInput();
+
+        bool doDebugRenderer() const {
+          return debugRenderButton.isActive;
+        };
+        bool isGameRunning();
 
         Console mConsole;
         int windowWidth[1] ={1280};
@@ -66,9 +120,17 @@ namespace Lomus {
         void renderPropertiesPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
 
         //Game Object
-        void renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject, Camera& camera);
+        void renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject, Camera& camera, SceneManager& sceneManager);
         void renderActiveScene(SceneManager& sceneManager);
         void renderModelComponent(Model& model);
+        void renderRigidBodyComponent(reactphysics3d::RigidBody* rigidyBody, bool isPhysical, SceneManager& sceneManager, std::shared_ptr<GameObject> currentGameObject);
+        void renderBoxColliderComponent(std::shared_ptr<GameObject> currentGameObject);
+
+
+        void prepareGameRuntime(SceneManager& sceneManager);
+        void reloadEditScene(SceneManager& sceneManager);
+
+
         void renderLightProperties();
 
 
@@ -112,13 +174,13 @@ namespace Lomus {
         ImGuizmo::OPERATION currentGizmoState = ImGuizmo::OPERATION::TRANSLATE;
 
         enum EditorState{gameObject,Scene,Light,Script}; // What Type of object is the engine displaying / editing
-        enum SceneState {world, texteditor};
+        enum EditState {editing, playing, texteditor};
 
 
         std::shared_ptr<Lomus::Light> currentSelectedLight = nullptr;
 
         EditorState currentState;
-        SceneState currentSceneState = SceneState::world;
+        EditState currentSceneState = EditState::editing;
         int currentId = -1;
 
         void initStlyle(EditorStyle style);
@@ -130,7 +192,24 @@ namespace Lomus {
 
         int errorline = 0;
 
+        ToggleButton debugRenderButton;
+        ToggleButton playButton;
+        ToggleButton pauseButton;
+
+        bool selectingCollider = false;
+        std::vector<Lomus::backUpObject> sceneCache;
+
+        //Game runtime stuff
+        backUpObject createBackupOfGameObject(std::shared_ptr<GameObject> gameObject);
+        void rollBackGameObject(std::shared_ptr<GameObject> gameObject, backUpObject rollBackData);
+
+    protected:
+        bool hasWindowResized = false;
+
 
     };
+
+
+
 
 }

@@ -10,6 +10,10 @@
 
 #include "../Shader/ShaderClass.h"
 namespace Lomus {
+
+
+
+
     class Camera
     {
     public:

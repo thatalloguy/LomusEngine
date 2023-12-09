@@ -77,12 +77,12 @@ public:
 
     // render the mesh
     void Draw(Shader &shader, Lomus::Camera& camera,
-              glm::mat4& matrix,
-              glm::vec3& translation,
-              glm::quat& rotation,
-              glm::vec3& scale,
+              glm::mat4 matrix,
+              glm::vec3 translation,
+              glm::quat rotation,
+              glm::vec3 scale,
               Lomus::Material& material,
-              bool castShadow = true)
+              bool castShadow)
     {
         for(unsigned int i = 0; i < textures.size(); i++)
         {
@@ -113,6 +113,7 @@ public:
 
         GLint modelLoc = glGetUniformLocation(shader.ID, "model");
 
+
         glm::mat4 trans = glm::mat4(1.0f);
         glm::mat4 rot = glm::mat4(1.0f);
         glm::mat4 sca = glm::mat4(1.0f);
@@ -123,17 +124,12 @@ public:
         rot = glm::mat4_cast(rotation);
         sca = glm::scale(sca, scale);
 
-
         matrix = trans * -rot * sca;
 
         glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(matrix)));
 
-        matrix = trans * -rot * sca;
-
-
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(matrix));
         glUniformMatrix3fv(shader.getUniformLocation("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
-        shader.setIntUniform("shouldCastShadow", castShadow);
 
         // draw mesh
         glBindVertexArray(VAO);

@@ -98,7 +98,7 @@ void Console::init()
     // Now We load the default commands
     addCommand("help", helpCommand);
     addCommand("list", listCommand);
-    addCommand("togglePhysics", togglePhysicsCommand);
+    //addCommand("togglePhysics", togglePhysicsCommand);
     addCommand("applyForce", applyForceCommand);
 
     //init the imgui style
@@ -107,8 +107,24 @@ void Console::init()
 
 void Console::addConsoleLog(const char* data)
 {
+    Console::buf.append("[Info]  ");
     Console::buf.append(data);
-    std::cout << "CONSOLE LOG: " << data;
+    Console::buf.append("\n");
+    spdlog::info(data);
+}
+
+void Console::addConsoleWarning(const char *data) {
+    Console::buf.append("[Warning]  ");
+    Console::buf.append(data);
+    Console::buf.append("\n");
+    spdlog::info(data);
+}
+
+void Console::addConsoleError(const char *data) {
+    Console::buf.append("[Error]  ");
+    Console::buf.append(data);
+    Console::buf.append("\n");
+    spdlog::info(data);
 }
 
 
@@ -130,10 +146,17 @@ void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& c
             ImGui::SetScrollHereY(1.0f);
         }
 
+        ImGui::BeginChild("Logs",ImVec2(ImGui::GetWindowContentRegionWidth(), height * 0.6), true);
+
         ImGui::TextUnformatted(Console::buf.begin());
+
+
+        ImGui::EndChild();
+
         ImGui::PushID(340);
         const char* d = "";
-        ImGui::SetCursorPosY(height - 30.0);
+
+        ImGui::SetCursorPosY(height - 25);
         ImGui::SetNextItemWidth(width * 0.9);
         ImGui::InputText(d, &commandBuffer);
         ImGui::PopID();

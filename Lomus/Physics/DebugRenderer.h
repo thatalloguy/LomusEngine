@@ -20,11 +20,11 @@ namespace Lomus {
 		float z;
 	};
 
-	class DebugRenderer {
+	class DRay {
 
 	public:
 
-		DebugRenderer(PhysicsWorld* world) {
+        DRay(PhysicsWorld* world) {
 
 			//Init The Vbo and VAO for lines :)
 			// translated: VBO *inits* VAO *creates and inits* VBO *bind it so vao reconginze it*
@@ -56,16 +56,11 @@ namespace Lomus {
 
 
 			reactphysics3d::DebugRenderer& debugRenderer = world->getDebugRenderer();
+            debugRenderer.reset();
 			debugRenderer.computeDebugRenderingPrimitives(*world);
 
 
-            if (update) {
-                updateBuffers(world);
-            } else if (isfirst) {
-                updateBuffers(world);
-                isfirst = false;
-            }
-
+            updateBuffers(world);
 
 
 

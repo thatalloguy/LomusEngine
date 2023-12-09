@@ -20,6 +20,7 @@ void SceneManager::createNewScene(std::string name)
 
 void SceneManager::addGameObject(GameObject& gameObject)
 {
+    gameObject.id = idCounter;
     auto newGameObject = std::make_shared<GameObject>(gameObject);
 	currentScene->gameObjects.emplace(idCounter, newGameObject);
     newGameObject->id = idCounter;
@@ -68,6 +69,7 @@ void SceneManager::renderCurrentScene(Shader& shader, Lomus::Camera& camera)
 
     if (!shader.isBroken) {
         for (auto& gameObject : currentScene->gameObjects) {
+            gameObject.second->castsShadow = false;
             gameObject.second->Draw(shader, camera);
         }
     }
@@ -79,26 +81,33 @@ void SceneManager::renderCurrentScene(Shader& shader, Lomus::Camera& camera)
 
 void SceneManager::Delete()
 {
-	auto it = scenes.begin();
+    if (!hasDeleted) {
+        hasDeleted = true;
+        auto it = scenes.begin();
 
-	while (it != scenes.end()) {
-		for (auto& gameObject : it->second->gameObjects) {
-			it->second->world->destroyRigidBody(gameObject.second->mRigidBody);
-			gameObject.second->Delete();
-			gameObject.second->DeletePhysicsData(common);
-			common.destroyPhysicsWorld(it->second->world);
+        while (it != scenes.end()) {
+            for (auto& gameObject : it->second->gameObjects) {
+                std::cout << "curr: " << gameObject.second->name << "\n";
+                it->second->world->destroyRigidBody(gameObject.second->mRigidBody);
+                gameObject.second->Delete();
+                gameObject.second->DeletePhysicsData(common);
 
-            //delete gameObject.second;
-		}
-        //delete it->second;
-		it++;
-	}
+                //delete gameObject.second;
+            }
 
-    brdfShader.Delete();
-    irradianceShader.Delete();
-    prefilterShader.Delete();
-    cubeMapShader.Delete();
-    toCubeMapShader.Delete();
+            common.destroyPhysicsWorld(it->second->world);
+            std::cout << "here here\n";
+            //delete it->second;
+            it++;
+        }
+
+
+        brdfShader.Delete();
+        irradianceShader.Delete();
+        prefilterShader.Delete();
+        cubeMapShader.Delete();
+        toCubeMapShader.Delete();
+    }
 
 }
 
@@ -114,41 +123,57 @@ void SceneManager::createRigidBody(int GameObjectId, BodyType type)
 	currentGameObject->Pquat.y =  currentGameObject->rotation.y;
 	currentGameObject->Pquat.z =  currentGameObject->rotation.z;
 	currentGameObject->Pquat.w =  currentGameObject->rotation.w;
+
+    currentGameObject->Pquat.inverse();
 	currentGameObject->transform = Transform(currentGameObject->Pvec3, currentGameObject->Pquat);
 	currentGameObject->mRigidBody = currentScene->world->createRigidBody(currentGameObject->transform);
 	currentGameObject->mRigidBody->setType(type);
 	currentGameObject->isPhysical = true;
-	
+
 }
 
-void SceneManager::addCollisionBoxShape(int GameObjectId, Vector3& halfExtents, Transform& Offset)
+void SceneManager::addCollisionBoxShape(int GameObjectId, Vector3 halfExtents, Transform& Offset)
 {
     auto currentGameObject = SceneManager::getGameobject(GameObjectId);
-	Collider* collider = currentGameObject->mRigidBody->addCollider(common.createBoxShape(halfExtents), Offset);
-	currentGameObject->colliders.push_back(collider);
+
+    BoxShape* shape = common.createBoxShape(halfExtents);
+	currentGameObject->colliderInfo.collider = currentGameObject->mRigidBody->addCollider(shape, Offset);
+
+    currentGameObject->colliderInfo.type = Lomus::ColliderShapeType::Box;
+    currentGameObject->colliderInfo.boxShape = shape;
+    currentGameObject->colliderInfo.hasShape = true;
 }
 void SceneManager::addCollisionSphereShape(int GameObjectId, float radius, Transform& Offset) {
     auto currentGameObject = SceneManager::getGameobject(GameObjectId);
-    Collider* collider = currentGameObject->mRigidBody->addCollider(common.createSphereShape(radius), Offset);
-    currentGameObject->colliders.push_back(collider);
+
+    SphereShape* shape = common.createSphereShape(radius);
+    currentGameObject->colliderInfo.collider = currentGameObject->mRigidBody->addCollider(shape, Offset);
+
+    currentGameObject->colliderInfo.type = Lomus::ColliderShapeType::Sphere;
+    currentGameObject->colliderInfo.sphereShape = shape;
+    currentGameObject->colliderInfo.hasShape = true;
 }
 
 void SceneManager::addCollisionCapsuleShape(int GameObjectId, float radius, float height, Transform& Offset) {
     auto currentGameObject = SceneManager::getGameobject(GameObjectId);
-    Collider* collider = currentGameObject->mRigidBody->addCollider(common.createCapsuleShape(radius, height), Offset);
-    currentGameObject->colliders.push_back(collider);
+    CapsuleShape* shape = common.createCapsuleShape(radius, height);
+    currentGameObject->colliderInfo.collider = currentGameObject->mRigidBody->addCollider(shape, Offset);
+
+    currentGameObject->colliderInfo.type = Lomus::ColliderShapeType::Capsule;
+    currentGameObject->colliderInfo.capsuleShape = shape;
+    currentGameObject->colliderInfo.hasShape = true;
 }
 
-void SceneManager::UpdatePhysicsWorld(float timeStamp)
-{
-	currentScene->world->update(timeStamp);
-	for (auto& gameObject : currentScene->gameObjects) {
-		
-		if (gameObject.second->isPhysical) {
+void SceneManager::UpdatePhysicsWorld(float timeStamp) {
+    refreshRigdBodiesTransforms();
+    currentScene->world->update(timeStamp);
+    for (auto &gameObject: currentScene->gameObjects) {
 
-			gameObject.second->position.x = gameObject.second->mRigidBody->getTransform().getPosition().x;
-			gameObject.second->position.y = -gameObject.second->mRigidBody->getTransform().getPosition().y;
-			gameObject.second->position.z = gameObject.second->mRigidBody->getTransform().getPosition().z;
+        if (gameObject.second->isPhysical) {
+
+            gameObject.second->position.x = gameObject.second->mRigidBody->getTransform().getPosition().x;
+            gameObject.second->position.y = -gameObject.second->mRigidBody->getTransform().getPosition().y;
+            gameObject.second->position.z = gameObject.second->mRigidBody->getTransform().getPosition().z;
 
             tempQuat.x = gameObject.second->mRigidBody->getTransform().getOrientation().x;
             tempQuat.y = gameObject.second->mRigidBody->getTransform().getOrientation().y;
@@ -162,14 +187,33 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp)
             gameObject.second->rotation.z = tempQuat.z;
             gameObject.second->rotation.w = tempQuat.w;
 
-		}
-	}
+        }
+    }
+}
+void SceneManager::refreshRigdBodiesTransforms() {
+
+    for (auto &gameObject : currentScene->gameObjects) {
+        if (gameObject.second->isPhysical) {
+            gameObject.second->transform.setPosition(reactphysics3d::Vector3(gameObject.second->position.x,-gameObject.second->position.y,gameObject.second->position.z));
+
+            gameObject.second->Pquat.x =  gameObject.second->rotation.x;
+            gameObject.second->Pquat.y =  gameObject.second->rotation.y;
+            gameObject.second->Pquat.z =  gameObject.second->rotation.z;
+            gameObject.second->Pquat.w =  gameObject.second->rotation.w;
+
+            gameObject.second->Pquat.inverse();
+            gameObject.second->transform.setOrientation(gameObject.second->Pquat);
+            gameObject.second->mRigidBody->setTransform(gameObject.second->transform);
+        }
+    }
 }
 
-void SceneManager::renderShadowMapScene(Shader &shader, Lomus::Camera &camera) {
+
+    void SceneManager::renderShadowMapScene(Shader &shader, Lomus::Camera &camera) {
     if (!shader.isBroken) {
         for (auto& gameObject : currentScene->gameObjects) {
             if (gameObject.second->castsShadow) {
+                gameObject.second->castsShadow = true;
                 gameObject.second->Draw(shader, camera);
             }
         }
@@ -388,3 +432,4 @@ void SceneManager::renderHDRMap(Lomus::Camera& camera) {
     glDepthFunc(GL_LESS);
 
 }
+

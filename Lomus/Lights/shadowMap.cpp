@@ -93,7 +93,6 @@ void cubeShadowMap::Delete()
 	glDeleteFramebuffers(1, &pointShadowMapFBO);
 }
 
-
 std::vector<glm::vec4> getFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view)
 {
     const auto inv = glm::inverse(view * proj);
@@ -153,13 +152,13 @@ void ShadowMap::unprepareRender(int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void ShadowMap::prepareRender(Camera &camera, Light &light, float resoWidth, float resoHeight) {
-    glViewport(0, 0, shadowMapWidth, shadowMapHeight);
+void ShadowMap::prepareRender(Camera& camera, Light& light, float resoWidth, float resoHeight) {
+    glViewport(0, 0, resoWidth, resoHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    camera.updateMatrix(45.0f, 0.1f, 1000.0f, resoWidth, resoHeight);
-    corners = getFrustumCornersWorldSpace(camera.projection, camera.view);
+    camera.updateMatrix(45.0f, 0.1f, 500.0f, resoWidth, resoHeight);
+    corners = getFrustumCornersWorldSpace(camera.view, camera.projection);
     glm::vec3 center = glm::vec3(0, 0, 0);
     for (const auto& v : corners)
     {
@@ -167,13 +166,13 @@ void ShadowMap::prepareRender(Camera &camera, Light &light, float resoWidth, flo
     }
     center /= corners.size();
 
-    const auto mlightView = glm::lookAt(
+    const auto lightView = glm::lookAt(
             center + glm::normalize(glm::vec3(light.lightAngle[0],light.lightAngle[1],light.lightAngle[2])),
             center,
             glm::vec3(0.0f, 1.0f, 0.0f)
     );
     lightProjection = glm::ortho(-area, area, -area, area, near_plane, far_plane);
-    lightSpaceMatrix = lightProjection * mlightView;
+    lightSpaceMatrix = lightProjection * lightView;
 
 
 
@@ -188,7 +187,7 @@ void ShadowMap::updateShader(Shader &shader, Light& light) {
     shader.setVec3Uniform("lightPos", light.lightPosition_x, light.lightPosition_y, light.lightPosition_z);
     shader.setMat4Uniform("lightProjection", lightSpaceMatrix);
 
-    glActiveTexture(GL_TEXTURE0 + 4);
+    glActiveTexture(GL_TEXTURE10);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     shader.setIntUniform("shadowMap", 4);
 }

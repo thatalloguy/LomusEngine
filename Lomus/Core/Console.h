@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <functional>
 #include <glfw/glfw3.h>
+#include <spdlog/spdlog.h>
 
 #include "../../Thirdparty/imgui/imgui_stdlib.h"
 #include "../../Thirdparty/imgui/imgui.h"
@@ -28,6 +29,8 @@ namespace Lomus {
         // Visual Console
         void init(); //This is for loading the engine's own commands
         void addConsoleLog(const char* data);
+        void addConsoleWarning(const char* data);
+        void addConsoleError(const char* data);
         void renderConsole(GLFWwindow *window, int width, int height, Camera& camera, SceneManager& sceneManager, ConsoleMode _mode);
         void clearConsole();
         void cleanUp();

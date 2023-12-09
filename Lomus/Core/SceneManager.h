@@ -6,12 +6,17 @@
 #include <unordered_map>
 #include <string>
 
-struct Scene {
+using namespace Lomus;
 
-    std::string name;
-	std::unordered_map<int, std::shared_ptr<GameObject>> gameObjects;
-	PhysicsWorld* world;
-};
+namespace Lomus {
+    struct Scene {
+
+        std::string name;
+        std::unordered_map<int, std::shared_ptr<GameObject>> gameObjects;
+        PhysicsWorld* world;
+    };
+
+}
 
 
 class SceneManager
@@ -35,10 +40,12 @@ public:
 
 	//physics stuff
 	void createRigidBody(int GameObjectId, BodyType type);
-	void addCollisionBoxShape(int GameObjectId, Vector3& halfExtents, Transform& Offset);
+	void addCollisionBoxShape(int GameObjectId, Vector3 halfExtents, Transform& Offset);
 	void UpdatePhysicsWorld(float timeStamp);
 	void addCollisionSphereShape(int GameObjectId, float radius, Transform& Offset);
 	void addCollisionCapsuleShape(int GameObjectId, float radius, float height, Transform& Offset);
+    void refreshRigdBodiesTransforms();
+
 
     //Mouse picking stuff
 
@@ -49,6 +56,7 @@ public:
 	
 
 private:
+    bool hasDeleted = false;
     Shader toCubeMapShader{"../../Lomus/Shader/shaders/cubeMap.vert", "../../Lomus/Shader/shaders/to_cubemap.frag"};
     Shader cubeMapShader{"../../Lomus/Shader/shaders/skybox.vert", "../../Lomus/Shader/shaders/skybox.frag"};
     Shader prefilterShader{"../../Lomus/Shader/shaders/cubeMap.vert", "../../Lomus/Shader/shaders/prefilter.frag"};

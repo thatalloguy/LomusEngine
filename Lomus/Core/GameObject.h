@@ -15,6 +15,32 @@ namespace Lomus{
         normal,
         id
     };
+
+
+    struct backUpObject {
+        int id;
+        glm::vec3 position;
+        glm::quat rotation;
+        glm::vec3 scale;
+    };
+
+    enum ColliderShapeType {
+        Box,
+        Sphere,
+        Capsule
+    };
+
+
+
+    struct ColliderInfo {
+        ColliderShapeType type;
+        reactphysics3d::Collider* collider;
+        reactphysics3d::BoxShape* boxShape = nullptr;
+        reactphysics3d::SphereShape* sphereShape = nullptr;
+        reactphysics3d::CapsuleShape* capsuleShape = nullptr;
+        bool hasShape = false;
+        Transform offsetTransform;
+    };
 }
 
 class GameObject
@@ -42,13 +68,13 @@ public:
 
 
 	//Physics stuff
-	RigidBody* mRigidBody;
+	RigidBody* mRigidBody = nullptr;
 	Transform transform = Transform();
 	Vector3 Pvec3 = Vector3(1, 1, 1);
 	Quaternion Pquat = Quaternion::identity();
 	
 	//Shapes
-	std::vector<Collider*> colliders;
+	Lomus::ColliderInfo colliderInfo;
 	bool isPhysical = false;
     Model model;
     bool castsShadow = true;

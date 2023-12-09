@@ -57,3 +57,13 @@ void DebugVBO::destroy()
 		id = 0;
 	}
 }
+
+void DebugVBO::clear() {
+
+    bind();
+
+    glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+
+    unbind();
+
+}

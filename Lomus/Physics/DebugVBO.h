@@ -19,6 +19,8 @@ public:
 	void bind();
 	void unbind();
 
+    void clear();
+
 	void destroy();
 private:
 	GLuint id;
