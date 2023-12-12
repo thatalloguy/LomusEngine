@@ -125,7 +125,8 @@ namespace Lomus {
         void renderModelComponent(Model& model);
         void renderRigidBodyComponent(reactphysics3d::RigidBody* rigidyBody, bool isPhysical, SceneManager& sceneManager, std::shared_ptr<GameObject> currentGameObject);
         void renderBoxColliderComponent(std::shared_ptr<GameObject> currentGameObject);
-
+        void renderSphereColliderComponent(std::shared_ptr<GameObject> currentGameObject);
+        void renderCapsuleColliderComponent(std::shared_ptr<GameObject> currentGameObject);
 
         void prepareGameRuntime(SceneManager& sceneManager);
         void reloadEditScene(SceneManager& sceneManager);

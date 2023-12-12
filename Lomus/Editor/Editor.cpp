@@ -872,6 +872,12 @@ void Editor::renderRigidBodyComponent(reactphysics3d::RigidBody *rigidyBody, boo
                         case Lomus::ColliderShapeType::Box:
                             renderBoxColliderComponent(currentGameObject);
                             break;
+                        case Lomus::ColliderShapeType::Sphere:
+                            renderSphereColliderComponent(currentGameObject);
+                            break;
+                        case Lomus::ColliderShapeType::Capsule:
+                            renderCapsuleColliderComponent(currentGameObject);
+                            break;
                     }
 
                     ImGui::Text(" ");
@@ -890,6 +896,12 @@ void Editor::renderRigidBodyComponent(reactphysics3d::RigidBody *rigidyBody, boo
 
                 if (ImGui::MenuItem(ICON_FA_CUBE " Box")) {
                       sceneManager.addCollisionBoxShape(currentGameObject->id, Vector3(1,1,1), currentGameObject->colliderInfo.offsetTransform);
+                }
+                if (ImGui::MenuItem(ICON_FA_CIRCLE " Sphere")) {
+                    sceneManager.addCollisionSphereShape(currentGameObject->id, 1.0f, currentGameObject->colliderInfo.offsetTransform);
+                }
+                if (ImGui::MenuItem( "O Capsule")) {
+                    sceneManager.addCollisionCapsuleShape(currentGameObject->id, 1.0f, 2.0f, currentGameObject->colliderInfo.offsetTransform);
                 }
 
                 ImGui::EndMenu();
@@ -940,6 +952,49 @@ void Editor::renderBoxColliderComponent(std::shared_ptr<GameObject> currentGameO
 }
 
 
+
+void Editor::renderSphereColliderComponent(std::shared_ptr<GameObject> currentGameObject) {
+    SphereShape* sphereShape = currentGameObject->colliderInfo.sphereShape;
+
+    ImGui::Text(ICON_FA_INFO " Shape Type: Sphere");
+
+    float radius[1] = {sphereShape->getRadius()};
+    ImGui::SeparatorText("Radius: ");
+
+
+    ImGui::Text("Size: "); ImGui::SameLine();
+    ImGui::PushID("raX");
+    ImGui::DragFloat(" ", radius, 0.1, 0.01);
+    ImGui::PopID();
+
+    sphereShape->setRadius(radius[0]);
+}
+
+
+
+void Editor::renderCapsuleColliderComponent(std::shared_ptr<GameObject> currentGameObject) {
+    CapsuleShape* capsuleShape = currentGameObject->colliderInfo.capsuleShape;
+
+    ImGui::Text(ICON_FA_INFO " Shape Type: Capsule");
+
+    float radius[1] = {capsuleShape->getRadius()};
+    float height[1] = {capsuleShape->getHeight()};
+    ImGui::SeparatorText("Size: ");
+
+
+    ImGui::Text("Radius: "); ImGui::SameLine();
+    ImGui::PushID("raX");
+    ImGui::DragFloat(" ", radius, 0.1, 0.01);
+    ImGui::PopID();
+
+    ImGui::Text("Height: "); ImGui::SameLine();
+    ImGui::PushID("raY");
+    ImGui::DragFloat(" ", height, 0.1, 0.01);
+    ImGui::PopID();
+
+    capsuleShape->setRadius(radius[0]);
+    capsuleShape->setHeight(height[0]);
+}
 
 
 
@@ -1240,9 +1295,9 @@ bool Editor::isGameRunning() {
 
 void Editor::prepareGameRuntime(SceneManager& sceneManager) {
     sceneCache.clear();
+    mConsole.addConsoleLog("Starting Game Runtime");
     for (auto pair : sceneManager.currentScene->gameObjects) {
         sceneCache.push_back(createBackupOfGameObject(pair.second));
-        mConsole.addConsoleLog(std::string("Saved data for runtime object " + pair.second->name).c_str());
     }
 }
 
