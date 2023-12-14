@@ -2,6 +2,8 @@
 
 #include "../Physics/DebugRenderer.h"
 #include "GameObject.h"
+#include "../Renderer/Billboard.h"
+
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -30,6 +32,8 @@ public:
 	void deleteScene(std::string name);
     std::shared_ptr<Scene> getCurrentScene();
     std::shared_ptr<GameObject> getGameobject(int id);
+    void removeGameObject(std::shared_ptr<GameObject> gameObject);
+
 
 	void renderCurrentScene(Shader& shader, Lomus::Camera& camera);
     void renderShadowMapScene(Shader& shader, Lomus::Camera& camera);

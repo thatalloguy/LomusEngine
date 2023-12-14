@@ -128,6 +128,8 @@ namespace Lomus {
         void renderSphereColliderComponent(std::shared_ptr<GameObject> currentGameObject);
         void renderCapsuleColliderComponent(std::shared_ptr<GameObject> currentGameObject);
 
+        void createNewGameObject(SceneManager& sceneManager);
+
         void prepareGameRuntime(SceneManager& sceneManager);
         void reloadEditScene(SceneManager& sceneManager);
 

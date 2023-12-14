@@ -1,4 +1,5 @@
 #include "SceneManager.h"
+#include <spdlog/spdlog.h>
 
 SceneManager::SceneManager() {
 
@@ -87,7 +88,6 @@ void SceneManager::Delete()
 
         while (it != scenes.end()) {
             for (auto& gameObject : it->second->gameObjects) {
-                std::cout << "curr: " << gameObject.second->name << "\n";
                 it->second->world->destroyRigidBody(gameObject.second->mRigidBody);
                 gameObject.second->Delete();
                 gameObject.second->DeletePhysicsData(common);
@@ -431,5 +431,11 @@ void SceneManager::renderHDRMap(Lomus::Camera& camera) {
     renderCube();
     glDepthFunc(GL_LESS);
 
+}
+
+void SceneManager::removeGameObject(std::shared_ptr<GameObject> gameObject) {
+    spdlog::info("Removing gameObject " + gameObject->name + " | ID: " + std::to_string(gameObject->id).c_str());
+    auto poorGameObject = currentScene->gameObjects.at(gameObject->id);
+    currentScene->gameObjects.erase(poorGameObject->id);
 }
 

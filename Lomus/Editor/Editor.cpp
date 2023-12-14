@@ -278,6 +278,12 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
 }
 
 
+void Editor::createNewGameObject(SceneManager &sceneManager) {
+    mConsole.addConsoleLog("Creating a new Game Object");
+    GameObject newObject(glm::vec3(0, 0, 0), glm::quat(0, 0, 0, 1), glm::vec3(1, -1, 1), "GameObject");
+    sceneManager.addGameObject(newObject);
+}
+
 
 
 
@@ -294,9 +300,20 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
         std::string search = "";
         ImGui::Spacing();
         ImGui::PushID("search");
-        ImGui::SetNextItemWidth(oldWindowWidth * 0.24f);
+        ImGui::SetNextItemWidth(oldWindowWidth * 0.20f);
         ImGui::InputTextWithHint(" ", "Search for Objects", &search);
         ImGui::PopID();
+
+        ImGui::SameLine();
+        ImGui::SetWindowFontScale(1.25f);
+        if (ImGui::Button(ICON_FA_PLUS)) {
+            createNewGameObject(sceneManager);
+        }
+
+        ImGui::SetWindowFontScale(1.0f);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Create a new Game Object");
+        }
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -408,15 +425,16 @@ void Editor::renderOtherPanel(Camera &camera, SceneManager &sceneManager, LightM
 
     ImGui::BeginTabBar("Other");
 
+    if (ImGui::BeginTabItem(ICON_FA_TERMINAL " Console", false, ImGuiWindowFlags_NoScrollbar)) {
+        mConsole.renderConsole(Editor::rawWindow, oldWindowWidth * 0.75f, oldWindowHeight * 0.35f, camera, sceneManager, Lomus::ConsoleMode::intergrated);
+        ImGui::EndTabItem();
+    }
+
     if (ImGui::BeginTabItem(ICON_FA_FOLDER " Files")) {
         ImGui::Text("Files here");
         ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem(ICON_FA_TERMINAL " Console", false, ImGuiWindowFlags_NoScrollbar)) {
-        mConsole.renderConsole(Editor::rawWindow, oldWindowWidth * 0.75f, oldWindowHeight * 0.35f, camera, sceneManager, Lomus::ConsoleMode::intergrated);
-        ImGui::EndTabItem();
-    }
 
     if (ImGui::BeginTabItem(ICON_FA_CODE" Shader Editor")) {
         if (ImGui::Button("Reload Shader")) {
@@ -483,10 +501,8 @@ void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, L
 }
 
 void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameObject, Camera& camera, SceneManager& sceneManager) {
-
+    bool isdel = false;
     ImGuiStyle& style = ImGui::GetStyle();
-
-
 
 
     ImGui::Text("Name: ");
@@ -498,7 +514,22 @@ void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameO
 
     ImGui::Text("ID: "); ImGui::SameLine(); ImGui::Text(  "%s", std::to_string(currentGameObject->id).c_str());
 
+
+
     ImGui::Spacing();
+
+    if (ImGui::Button("Delete GameObject")) {
+        if (currentSceneState != playing) {
+            sceneManager.removeGameObject(currentGameObject);
+            currentId = -1;
+            currentGameObject = nullptr;
+            return;
+        } else {
+            mConsole.addConsoleError("Cannot delete a gameObject in game runtime!");
+        }
+
+    }
+
     ImGui::Spacing();
 
     ImGui::SetNextItemWidth(windowWidth[0] * 0.175);
@@ -646,18 +677,21 @@ void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameO
 
         ImGui::TreePop();
     }
-
     ImGui::Text(" ");
     if (!currentGameObject->model.isEmpty()) {
         if (ImGui::TreeNodeEx((ICON_FA_CUBES" Model"), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
             renderModelComponent(currentGameObject->model);
             ImGui::TreePop();
         }
+
     }
     ImGui::Text(" ");
 
 
-    renderRigidBodyComponent(currentGameObject->mRigidBody, currentGameObject->isPhysical, sceneManager, currentGameObject);
+    if (currentGameObject->isPhysical) {
+        renderRigidBodyComponent(currentGameObject->mRigidBody, currentGameObject->isPhysical, sceneManager, currentGameObject);
+    }
+
 
     ImGui::Separator();
 
@@ -824,7 +858,7 @@ void Editor::renderModelComponent(Model& model) {
 void Editor::renderRigidBodyComponent(reactphysics3d::RigidBody *rigidyBody, bool isPhysical, SceneManager& sceneManager, std::shared_ptr<GameObject> currentGameObject) {
 
 
-    if (isPhysical) {
+
 
         if (ImGui::TreeNodeEx(ICON_FA_WAND_MAGIC " RigidBody", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
 
@@ -914,10 +948,12 @@ void Editor::renderRigidBodyComponent(reactphysics3d::RigidBody *rigidyBody, boo
         }
 
 
-    }
+
 
 
 }
+
+
 
 void Editor::renderBoxColliderComponent(std::shared_ptr<GameObject> currentGameObject) {
     BoxShape* boxShape = currentGameObject->colliderInfo.boxShape;
@@ -951,8 +987,6 @@ void Editor::renderBoxColliderComponent(std::shared_ptr<GameObject> currentGameO
     boxShape->setHalfExtents(Vector3(halfExtentX[0],halfExtentY[0],halfExtentZ[0]));
 }
 
-
-
 void Editor::renderSphereColliderComponent(std::shared_ptr<GameObject> currentGameObject) {
     SphereShape* sphereShape = currentGameObject->colliderInfo.sphereShape;
 
@@ -969,8 +1003,6 @@ void Editor::renderSphereColliderComponent(std::shared_ptr<GameObject> currentGa
 
     sphereShape->setRadius(radius[0]);
 }
-
-
 
 void Editor::renderCapsuleColliderComponent(std::shared_ptr<GameObject> currentGameObject) {
     CapsuleShape* capsuleShape = currentGameObject->colliderInfo.capsuleShape;
