@@ -134,8 +134,8 @@ namespace Lomus {
         void reloadEditScene(SceneManager& sceneManager);
 
 
-        void renderLightProperties();
-
+        void renderLightProperties(SceneManager& sm, LightManager& lm);
+        void createNewLight(SceneManager& sm, LightManager& lm);
 
         void createFBO(int width, int height);
 
@@ -208,7 +208,7 @@ namespace Lomus {
 
     protected:
         bool hasWindowResized = false;
-
+        int lightCount = 0;
 
     };
 

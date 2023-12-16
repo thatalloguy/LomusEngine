@@ -36,6 +36,7 @@ public:
     // constructor, expects a filepath to a 3D model.
     bool load(string const &path)
     {
+
         isDeleted = false;
         rawPath = path;
         gammaCorrection = false;
@@ -58,9 +59,9 @@ public:
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader, camera, matrix, translation, rotation, scale, mMaterial, castShadow);
     }
-    string rawPath;
-    bool isDeleted = false;
+    string rawPath = "EMPTY";
 
+    bool isDeleted = true;
     void Delete() {
         textures_loaded.clear();
         for (auto mesh : meshes) {
@@ -73,6 +74,7 @@ public:
     bool isEmpty() const {
         return isDeleted;
     }
+
 
 private:
 

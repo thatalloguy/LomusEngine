@@ -28,6 +28,15 @@ void SceneManager::addGameObject(GameObject& gameObject)
     idCounter++;
 }
 
+
+void SceneManager::removeGameObject(std::shared_ptr<GameObject> gameObject) {
+    spdlog::info("Removing gameObject " + gameObject->name + " | ID: " + std::to_string(gameObject->id).c_str());
+    auto poorGameObject = currentScene->gameObjects.at(gameObject->id);
+    currentScene->gameObjects.erase(poorGameObject->id);
+}
+
+
+
 void SceneManager::setCurrentScene(std::string name)
 {
 
@@ -72,8 +81,16 @@ void SceneManager::renderCurrentScene(Shader& shader, Lomus::Camera& camera)
         for (auto& gameObject : currentScene->gameObjects) {
             gameObject.second->castsShadow = false;
             gameObject.second->Draw(shader, camera);
+
+            if (!gameObject.second->mBillboard.amEmpty) {
+                gameObject.second->mBillboard.position = -gameObject.second->position;
+                gameObject.second->mBillboard.scale = gameObject.second->scale;
+                gameObject.second->mBillboard.Render(camera, billboardShader);
+            }
+
         }
     }
+
 
     renderHDRMap(camera);
 
@@ -209,7 +226,7 @@ void SceneManager::refreshRigdBodiesTransforms() {
 }
 
 
-    void SceneManager::renderShadowMapScene(Shader &shader, Lomus::Camera &camera) {
+void SceneManager::renderShadowMapScene(Shader &shader, Lomus::Camera &camera) {
     if (!shader.isBroken) {
         for (auto& gameObject : currentScene->gameObjects) {
             if (gameObject.second->castsShadow) {
@@ -432,10 +449,3 @@ void SceneManager::renderHDRMap(Lomus::Camera& camera) {
     glDepthFunc(GL_LESS);
 
 }
-
-void SceneManager::removeGameObject(std::shared_ptr<GameObject> gameObject) {
-    spdlog::info("Removing gameObject " + gameObject->name + " | ID: " + std::to_string(gameObject->id).c_str());
-    auto poorGameObject = currentScene->gameObjects.at(gameObject->id);
-    currentScene->gameObjects.erase(poorGameObject->id);
-}
-

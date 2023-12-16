@@ -369,9 +369,19 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
         std::string search = "";
         ImGui::Spacing();
         ImGui::PushID("search");
-        ImGui::SetNextItemWidth(oldWindowWidth * 0.24f);
+        ImGui::SetNextItemWidth(oldWindowWidth * 0.20f);
         ImGui::InputTextWithHint(" ", "Search for Lights", &search);
         ImGui::PopID();
+
+        ImGui::SameLine();
+        ImGui::SetWindowFontScale(1.25f);
+        if (ImGui::Button(ICON_FA_PLUS)) {
+            createNewLight(sceneManager, lightManager);
+        }
+        ImGui::SetWindowFontScale(1.0f);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Create a new light Source");
+        }
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -468,7 +478,6 @@ void Editor::renderOtherPanel(Camera &camera, SceneManager &sceneManager, LightM
 }
 
 void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
-
     ImGui::SetNextWindowPos(ImVec2(oldWindowWidth * 0.75f, oldWindowHeight * 0.5f));
     ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.25f, oldWindowHeight * 0.5f));
     ImGui::Begin(ICON_FA_INFO " Information & Properties", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
@@ -480,7 +489,6 @@ void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, L
 
             if (currentId != -1) {
                 renderGameObjectProperties(sceneManager.getGameobject(currentId), camera,sceneManager);
-
             }
 
             break;
@@ -488,7 +496,7 @@ void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, L
             renderActiveScene(sceneManager);
             break;
         case Light:
-            renderLightProperties();
+            renderLightProperties(sceneManager, lightManager);
             //mConsole.addConsoleLog("Not Ready!\n");
             break;
         case Script:
@@ -1143,7 +1151,7 @@ void Editor::renderActiveScene(SceneManager &sceneManager) {
 }
 
 
-void Editor::renderLightProperties() {
+void Editor::renderLightProperties(SceneManager& sm, LightManager& lm) {
 
     if (currentSelectedLight != nullptr) {
         ImGui::Text(" ");
@@ -1159,6 +1167,14 @@ void Editor::renderLightProperties() {
         ImGui::PopID();
         item_current_2 += 1;
         currentSelectedLight->lightType = item_current_2;
+
+        ImGui::Spacing();
+        if (ImGui::Button("Delete Light")) {
+            lm.deleteLight(sm.currentScene, currentSelectedLight->name);
+            currentSelectedLight = nullptr;
+            return;
+        }
+        ImGui::Spacing();
 
         ImGui::Text(" ");
         if (ImGui::TreeNodeEx((ICON_FA_GEAR" TransFormation"), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
@@ -1350,18 +1366,35 @@ backUpObject Editor::createBackupOfGameObject(std::shared_ptr<GameObject> gameOb
 
 void Editor::rollBackGameObject(std::shared_ptr<GameObject> gameObject, backUpObject rollBackData) {
     if (gameObject != nullptr) {
+        if (gameObject->mRigidBody != nullptr) {
+            gameObject->mRigidBody->resetForce();
+            gameObject->mRigidBody->resetTorque();
+            gameObject->mRigidBody->setAngularVelocity(Vector3(0, 0, 0));
+            gameObject->mRigidBody->setLinearVelocity(Vector3(0, 0, 0));
 
-        gameObject->mRigidBody->resetForce();
-        gameObject->mRigidBody->resetTorque();
-        gameObject->mRigidBody->setAngularVelocity(Vector3(0, 0, 0));
-        gameObject->mRigidBody->setLinearVelocity(Vector3(0, 0, 0));
+            gameObject->position = rollBackData.position;
+            gameObject->rotation = rollBackData.rotation;
+            gameObject->scale = rollBackData.scale;
+        }
 
-        gameObject->position = rollBackData.position;
-        gameObject->rotation = rollBackData.rotation;
-        gameObject->scale = rollBackData.scale;
 
     } else{
         mConsole.addConsoleError("Could not change this gameObject since its a nullptr :(");
     }
 
+}
+
+void Editor::createNewLight(SceneManager &sm, LightManager &lm) {
+    mConsole.addConsoleLog("Created new Light Object");
+    Lomus::Light newLight = Lomus::Light{
+            0, 0, 0,
+            1,1, 1, 1,
+            5,
+            {0, 0, 0},
+            2,
+            std::string("New Light" + std::to_string(lightCount)),
+            false
+    };
+    lm.createNewLight(sm.currentScene, newLight);
+    lightCount++;
 }

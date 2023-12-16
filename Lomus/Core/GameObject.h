@@ -1,4 +1,5 @@
 #pragma once
+#include "../Renderer/Billboard.h"
 #include "../Renderer/Model.h"
 #include "glm/detail/type_quat.hpp"
 #include "../Renderer/Camera.h"
@@ -8,6 +9,7 @@
 
 using namespace std;
 using namespace reactphysics3d;
+using namespace Lomus;
 
 namespace Lomus{
     enum RenderPhase{
@@ -59,6 +61,7 @@ public:
 	GameObject(glm::vec3 position, glm::quat rotation, glm::vec3 scale, string name);
 	
 	void createModel(std::string const& path);
+    void createBillboardModel(std::string path);
 	void createModel(std::string const& path, std::map<std::string, std::string>& textures);
 
 	void Draw(Shader& defaultShader, Lomus::Camera& camera);
@@ -75,8 +78,10 @@ public:
 	
 	//Shapes
 	Lomus::ColliderInfo colliderInfo;
+    LomusModelTypes::Billboard mBillboard;
 	bool isPhysical = false;
     Model model;
+
     bool castsShadow = true;
 
 private:

@@ -2,7 +2,6 @@
 
 #include "../Physics/DebugRenderer.h"
 #include "GameObject.h"
-#include "../Renderer/Billboard.h"
 
 #include <vector>
 #include <unordered_map>
@@ -52,7 +51,6 @@ public:
 
 
     //Mouse picking stuff
-
 	PhysicsCommon common;
 	bool doPhysics = true;
 
@@ -66,14 +64,13 @@ private:
     Shader prefilterShader{"../../Lomus/Shader/shaders/cubeMap.vert", "../../Lomus/Shader/shaders/prefilter.frag"};
     Shader irradianceShader{"../../Lomus/Shader/shaders/cubeMap.vert", "../../Lomus/Shader/shaders/irradiance.frag"};
     Shader brdfShader{"../../Lomus/Shader/shaders/brdf.vert", "../../Lomus/Shader/shaders/brdf.frag"};
+    Shader billboardShader{"../../Lomus/Shader/shaders/billboard.vert","../../Lomus/Shader/shaders/billboard.frag"};
 
     void renderHDRMap(Lomus::Camera& camera);
 
-    //Mouse picking stuff
-    //void setupIdFramebuffer();
-   // void bindIdFrameBuffer();
-   // void unbindIdFrameBuffer();
-   // void deleteIdFrameBuffer();
+
+
+
     unsigned int cubeVAO = 0;
     unsigned int cubeVBO = 0;
 
@@ -189,6 +186,7 @@ private:
     unsigned int brdfLUTTexture;
 
     int idCounter = 0;
+    int billboardIdCounter = 0;
 	unordered_map<string, std::shared_ptr<Scene>> scenes;
 	bool isItFirstScene = true;
     Quaternion tempQuat;

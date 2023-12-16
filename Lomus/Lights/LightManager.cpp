@@ -45,7 +45,7 @@ void LightManager::updateShader(Shader& shader, std::shared_ptr<Scene> scene)
 
 void LightManager::deleteLight(std::shared_ptr<Scene> scene, string& id)
 {
-	lightIdMap.erase(id);
+	lightIdMap.at(scene->name).erase(id);
 }
 
 

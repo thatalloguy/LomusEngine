@@ -24,6 +24,7 @@ void GameObject::Draw(Shader& defaultShader, Lomus::Camera& camera)
 
 void GameObject::Delete()
 {
+
 }
 
 void GameObject::DeletePhysicsData(PhysicsCommon& common)
@@ -34,4 +35,9 @@ void GameObject::DeletePhysicsData(PhysicsCommon& common)
 
 void GameObject::createModel(const string &path, map<std::string, std::string> &textures) {
     model.load(path, textures);
+}
+
+void GameObject::createBillboardModel(std::string path) {
+    mBillboard.load(path);
+    mBillboard.amEmpty = false;
 }
