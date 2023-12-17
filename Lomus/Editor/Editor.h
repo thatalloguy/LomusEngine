@@ -10,6 +10,7 @@
 #include "../Lights/LightManager.h"
 #include "../Core/Console.h"
 #include "../Shader/ShaderClass.h"
+#include "../Core/GameObject.h"
 #include "../Utils/ToolBox.h"
 #include "../Input/Keyboard.h"
 
@@ -88,6 +89,8 @@ namespace Lomus {
         void setShader(int i, Shader& shader);
         bool isWindowMinized();
 
+        void renderDebugLightObjects(Camera& camera, Shader& billboardShader);
+
         bool allowCameraInput();
 
         bool doDebugRenderer() const {
@@ -104,6 +107,9 @@ namespace Lomus {
         float shadowArea[1] = {100};
         float shadowNearPlane[1] = {-50};
         float shadowFarPlane[1] = {25};
+
+        LomusModelTypes::Billboard cameraBillboard;
+
     private:
 
         struct movableObject {
@@ -111,6 +117,9 @@ namespace Lomus {
             glm::quat& rotation;
             glm::vec3& scale;
         };
+
+        std::string lightImagePath = "../../Lomus/Resources/lightbulb.png";
+        std::string cameraImagePath = "../../Lomus/Resources/camera.png";
 
         void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);
         void renderTheFullEditor(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
@@ -127,6 +136,9 @@ namespace Lomus {
         void renderBoxColliderComponent(std::shared_ptr<GameObject> currentGameObject);
         void renderSphereColliderComponent(std::shared_ptr<GameObject> currentGameObject);
         void renderCapsuleColliderComponent(std::shared_ptr<GameObject> currentGameObject);
+
+        void renderBillboardModelComponent(std::shared_ptr<GameObject> currentGameObject);
+
 
         void createNewGameObject(SceneManager& sceneManager);
 
@@ -205,6 +217,9 @@ namespace Lomus {
         //Game runtime stuff
         backUpObject createBackupOfGameObject(std::shared_ptr<GameObject> gameObject);
         void rollBackGameObject(std::shared_ptr<GameObject> gameObject, backUpObject rollBackData);
+
+        std::unordered_map<std::shared_ptr<Lomus::Light>, LomusModelTypes::Billboard*> lightBillboards;
+
 
     protected:
         bool hasWindowResized = false;

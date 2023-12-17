@@ -55,6 +55,7 @@ public:
 	bool doPhysics = true;
 
     std::shared_ptr<Scene> currentScene;
+    Shader billboardShader{"../../Lomus/Shader/shaders/billboard.vert","../../Lomus/Shader/shaders/billboard.frag"};
 	
 
 private:
@@ -64,7 +65,6 @@ private:
     Shader prefilterShader{"../../Lomus/Shader/shaders/cubeMap.vert", "../../Lomus/Shader/shaders/prefilter.frag"};
     Shader irradianceShader{"../../Lomus/Shader/shaders/cubeMap.vert", "../../Lomus/Shader/shaders/irradiance.frag"};
     Shader brdfShader{"../../Lomus/Shader/shaders/brdf.vert", "../../Lomus/Shader/shaders/brdf.frag"};
-    Shader billboardShader{"../../Lomus/Shader/shaders/billboard.vert","../../Lomus/Shader/shaders/billboard.frag"};
 
     void renderHDRMap(Lomus::Camera& camera);
 

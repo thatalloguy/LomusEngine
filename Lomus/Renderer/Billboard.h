@@ -21,13 +21,13 @@ namespace LomusModelTypes {
 
         void swapImage(std::string& imagePath);
         bool amEmpty = true; // has to be set by other class for some reasone :(
-
-        glm::vec3 scale{4, 4, 4};
+        bool lockYRot = false;
+        glm::vec3 scale{2, 2, 2};
         glm::vec3 position{0, 0, 0};
 
+        unsigned int rawTexture;
 
     private:
-        unsigned int rawTexture;
         unsigned int quadVAO = 0;
         unsigned int quadVBO;
 

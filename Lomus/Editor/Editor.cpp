@@ -139,7 +139,8 @@ Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& scene
 
     pauseButton.activeColor = ImVec4(0.44, 0.44, 1, 1);
 
-
+    cameraBillboard.load(cameraImagePath);
+    cameraBillboard.lockYRot = true;
 
 }
 
@@ -243,6 +244,25 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
             manipulateObjectViaGizmo(moveObject, camera);
         }
 
+        if (currentState == EditorState::Scene) {
+
+            glm::vec3 ts = {1, 1, 1};
+            glm::quat tq = {0, 0, 0, 1};
+            glm::vec3 tp = -cameraBillboard.position;
+            Editor::movableObject moveObject = {
+                    tp,
+                    tq,
+                    ts
+            };
+
+            manipulateObjectViaGizmo(moveObject, camera);
+
+            cameraBillboard.position.x = -moveObject.position.x;
+            cameraBillboard.position.y = -moveObject.position.y;
+            cameraBillboard.position.z = -moveObject.position.z;
+        }
+
+
         if (currentSelectedLight != nullptr && currentState == EditorState::Light && currentSelectedLight->lightType != 1 && currentSceneState == EditState::editing) {
 
             glm::vec3 tp = glm::vec3(currentSelectedLight->lightPosition_x,currentSelectedLight->lightPosition_y,currentSelectedLight->lightPosition_z);
@@ -260,6 +280,13 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
             currentSelectedLight->lightPosition_x = tp.x;
             currentSelectedLight->lightPosition_y = tp.y;
             currentSelectedLight->lightPosition_z = tp.z;
+
+            auto billboard = lightBillboards.at(currentSelectedLight);
+            if (billboard != nullptr) {
+                billboard->position.x = -currentSelectedLight->lightPosition_x;
+                billboard->position.y = -currentSelectedLight->lightPosition_y;
+                billboard->position.z = -currentSelectedLight->lightPosition_z;
+            }
         }
 
 
@@ -699,7 +726,7 @@ void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameO
     if (currentGameObject->isPhysical) {
         renderRigidBodyComponent(currentGameObject->mRigidBody, currentGameObject->isPhysical, sceneManager, currentGameObject);
     }
-
+    renderBillboardModelComponent(currentGameObject);
 
     ImGui::Separator();
 
@@ -720,6 +747,11 @@ void Editor::renderGameObjectProperties(std::shared_ptr<GameObject> currentGameO
             if (ImGui::MenuItem("Model")) {
                 selectingComponents = false;
                 currentGameObject->model.isDeleted = false;
+            }
+
+            if (ImGui::MenuItem("Billboard")) {
+                selectingComponents = false;
+                currentGameObject->mBillboard.amEmpty = false;
             }
 
             ImGui::EndMenu();
@@ -864,10 +896,6 @@ void Editor::renderModelComponent(Model& model) {
 }
 
 void Editor::renderRigidBodyComponent(reactphysics3d::RigidBody *rigidyBody, bool isPhysical, SceneManager& sceneManager, std::shared_ptr<GameObject> currentGameObject) {
-
-
-
-
         if (ImGui::TreeNodeEx(ICON_FA_WAND_MAGIC " RigidBody", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
 
             ImGui::Text(ICON_FA_INFO " Type:");
@@ -1036,9 +1064,53 @@ void Editor::renderCapsuleColliderComponent(std::shared_ptr<GameObject> currentG
     capsuleShape->setHeight(height[0]);
 }
 
+void Editor::renderBillboardModelComponent(std::shared_ptr<GameObject> currentGameObject) {
+    std::string filedialog = "OPEN IMAGE";
+    if (!currentGameObject->mBillboard.amEmpty) {
+        if (ImGui::TreeNodeEx(ICON_FA_OBJECT_GROUP " Billboard", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
+            ImGui::Text(ICON_FA_INFO " Type: "); ImGui::SameLine(); ImGui::Text("Billboard");
+            ImGui::Text(" ");
+            if (ImGui::TreeNodeEx(ICON_FA_IMAGE " Texture")) {
+                ImGui::BeginChild("Logs",ImVec2(oldWindowWidth * 0.21f, oldWindowHeight * 0.21f), true);
+
+                ImGui::Image((void*)(intptr_t)currentGameObject->mBillboard.rawTexture, ImVec2(static_cast<float>(oldWindowWidth * 0.2), static_cast<float>(oldWindowHeight * 0.2)),ImVec2(0, -1), ImVec2( 1, 0));
+                ImGui::EndChild();
+
+                if (ImGui::Button("Change Image")) {
+                    ImGui::OpenPopup(3);
+                }
+                ImGui::TreePop();
+            }
 
 
-void Editor:: manipulateObjectViaGizmo(movableObject& object, Camera& camera) {
+            ImGui::TreePop();
+
+            ImGui::Text(" ");
+            ImGui::Text(ICON_FA_LOCK " Lock Y rotation: "); ImGui::SameLine();
+            ImGui::PushID("lyr");
+            ImGui::Checkbox(" ", &currentGameObject->mBillboard.lockYRot);
+            ImGui::PopID();
+            ImGui::Spacing();
+            ImGui::Spacing();
+            if (ImGui::Button(ICON_FA_TRASH" Delete")) {
+                currentGameObject->mBillboard.amEmpty = true;
+            }
+        }
+    }
+
+
+
+    if(file_dialog.showFileDialog(3, imgui_addons::ImGuiFileBrowser::DialogMode::OPEN, ImVec2(windowWidth[0] / 2, windowHeight[0] / 2)))
+    {
+        if (!file_dialog.selected_path.empty()) {
+            currentGameObject->mBillboard.swapImage(file_dialog.selected_path);
+        }
+
+    }
+
+}
+
+void Editor::manipulateObjectViaGizmo(movableObject& object, Camera& camera) {
     glm::mat4 trans = glm::mat4(1.0f);
     glm::mat4 rot = glm::mat4(1.0f);
     glm::mat4 sca = glm::mat4(1.0f);
@@ -1149,6 +1221,9 @@ void Editor::renderActiveScene(SceneManager &sceneManager) {
 
     ImGui::EndTabBar();
 }
+
+
+
 
 
 void Editor::renderLightProperties(SceneManager& sm, LightManager& lm) {
@@ -1287,6 +1362,10 @@ void Editor::Delete() {
     glDeleteTextures(1, &texture_id);
     glDeleteFramebuffers(1, & FBO);
 
+    for (auto pair : lightBillboards) {
+        delete pair.second;
+    }
+
 }
 
 void Editor::resizeFrameBuffer(int newWidth, int newHeight) {
@@ -1397,4 +1476,17 @@ void Editor::createNewLight(SceneManager &sm, LightManager &lm) {
     };
     lm.createNewLight(sm.currentScene, newLight);
     lightCount++;
+    auto* bill = new LomusModelTypes::Billboard();
+    bill->load(lightImagePath);
+    bill->scale.x = 1;
+    bill->scale.y = 2;
+    lightBillboards.emplace(lm.lightIdMap.at(sm.currentScene->name).at(std::string("New Light" + std::to_string(lightCount - 1))), bill);
+    spdlog::info("GOT HERE");
+}
+
+void Editor::renderDebugLightObjects(Camera &camera, Shader& billboardShader) {
+    for (auto pair : lightBillboards) {
+        pair.second->Render(camera, billboardShader);
+    }
+    cameraBillboard.Render(camera, billboardShader);
 }

@@ -52,8 +52,13 @@ void LomusModelTypes::Billboard::Render(Lomus::Camera &camera, Shader &billboard
     glm::translate(trans, position);
     glm::mat4 sca = glm::mat4(1.0f);
     sca = glm::scale(sca, scale);
+    glm::mat4 rot;
+    if (!lockYRot) {
+        rot = glm::inverse(glm::lookAt(position, camera.Position, glm::vec3(0, 1, 0)));
+    } else {
+        rot = glm::inverse(glm::lookAt(position, glm::vec3(camera.Position.x, position.y, camera.Position.z), glm::vec3(0, 1, 0)));
 
-    glm::mat4 rot = glm::inverse(glm::lookAt(position, camera.Position, glm::vec3(0, 1, 0)));
+    }
 
     model = trans  * rot * sca;
 
@@ -96,7 +101,7 @@ void LomusModelTypes::Billboard::Render(Lomus::Camera &camera, Shader &billboard
 
 void LomusModelTypes::Billboard::swapImage(std::string &imagePath) {
     int width, height, nrComponents;
-    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(false);
     unsigned char *data = stbi_load(imagePath.c_str(), &width, &height, &nrComponents, 0);
     if (data) {
         GLenum format;

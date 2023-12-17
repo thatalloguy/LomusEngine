@@ -23,6 +23,7 @@ namespace Lomus {
         int lightType;
         std::string name;
         bool castShadow;
+        int id = -1;
     };
 
 }
