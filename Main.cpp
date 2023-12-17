@@ -150,16 +150,10 @@ int main() {
     GameObject ground(glm::vec3(0.0f, 5.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(10.0f, -1.0f, 10.0f), "Ground");
     ground.createModel("../../Resources/Model/testCube/testCube.gltf");
 
-    GameObject emptyObject(glm::vec3(5.0f, 5.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), "Billboard");
-
-
-    std::string billboardPath ="../../Lomus/Resources/lightbulb.png";
-    emptyObject.createBillboardModel(billboardPath);
 
 
     sceneManager.addGameObject(helmet);
     sceneManager.addGameObject(ground);
-    sceneManager.addGameObject(emptyObject);
 
 
 
@@ -375,6 +369,8 @@ int main() {
 
 
         sceneManager.renderCurrentScene(shaderProgram, camera);
+        editor.renderDebugLightObjects(camera, sceneManager.billboardShader);
+
         if (editor.doDebugRenderer()) {
             sceneManager.refreshRigdBodiesTransforms();
             lDebugRenderer.Render(sceneManager.getCurrentScene()->world, camera, !editor.isGameRunning());
@@ -416,7 +412,7 @@ int main() {
     //modelTest.cleanUp();
 
     //skybox.Delete();
-
+    editor.Delete();
     lightManager.Delete();
 
     shaderProgram.Delete();
