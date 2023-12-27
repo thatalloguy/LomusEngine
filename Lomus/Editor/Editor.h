@@ -9,6 +9,7 @@
 #include "../Core/SceneManager.h"
 #include "../Lights/LightManager.h"
 #include "../Core/Console.h"
+#include "../Core/ProjectManager.h"
 #include "../Shader/ShaderClass.h"
 #include "../Core/GameObject.h"
 #include "../Utils/ToolBox.h"
@@ -99,6 +100,7 @@ namespace Lomus {
         bool isGameRunning();
 
         Console mConsole;
+        ProjectManager projectManager;
         int windowWidth[1] ={1280};
         int windowHeight[1] = {720};
         int visible = 1;
@@ -123,6 +125,8 @@ namespace Lomus {
 
         void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);
         void renderTheFullEditor(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
+        void renderTitlebar(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
+
 
         void renderSelectionPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
         void renderOtherPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);

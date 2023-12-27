@@ -20,6 +20,11 @@ namespace Lomus {
 		float z;
 	};
 
+    struct debugShape{
+        std::vector<debugVertex> vertices;
+        std::vector<int> indices;
+    };
+
 	class DRay {
 
 	public:
@@ -117,7 +122,14 @@ namespace Lomus {
 			debugShader.Delete();
 		};
 
+        void addCustomDebugShape(debugShape& shape) {
+
+        }
+
+
 	private:
+
+
 
 		void updateBuffers(PhysicsWorld* world) {
 
@@ -136,7 +148,6 @@ namespace Lomus {
 
                 newVertices.clear();
 				for (int i = 0; i < nbTriangles; i++) {
-
 					newVertices.push_back(Lomus::debugVertex{ -rawTriangles[i].point1.x, rawTriangles[i].point1.y, -rawTriangles[i].point1.z });
 					newVertices.push_back(Lomus::debugVertex{ -rawTriangles[i].point2.x, rawTriangles[i].point2.y, -rawTriangles[i].point2.z });
 					newVertices.push_back(Lomus::debugVertex{ -rawTriangles[i].point3.x, rawTriangles[i].point3.y, -rawTriangles[i].point3.z });

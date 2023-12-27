@@ -18,7 +18,7 @@ void Lomus::Editor::initStlyle(EditorStyle editorStyle) {
     style.WindowMenuButtonPosition = ImGuiDir_Left;
     style.ChildRounding = 0.0f;
     style.ChildBorderSize = 1.0f;
-    style.PopupRounding = 0.0f;
+    style.PopupRounding = 5.0f;
     style.PopupBorderSize = 1.0f;
     style.FramePadding = ImVec2(4.0f, 3.0f);
     style.FrameRounding = 7.5f;
@@ -95,13 +95,13 @@ void Lomus::Editor::initStlyle(EditorStyle editorStyle) {
 
 }
 
-Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& sceneManager) {
+Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& sceneManager) : projectManager(mConsole) {
     mConsole.init();
     initStlyle(style);
     Editor::rawWindow = window;
 
     glfwGetWindowSize(window, Editor::windowWidth, Editor::windowHeight);
-    std::cout << "Creating editor at size:" << Editor::windowWidth[0] << "X" << Editor::windowHeight[0] << "\n";
+    mConsole.addConsoleLog(std::string("Creating editor at size:" + std::to_string(Editor::windowWidth[0]) + "X" + std::to_string(Editor::windowHeight[0]) + "\n").c_str());
 
     createFBO(512, 512);
 
@@ -126,7 +126,7 @@ Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& scene
         in.close();
         textEditor.SetText(contents);
     } else {
-        std::cout << "Couldn't load: ../../Lomus/Shader/shaders/default.frag\n";
+        mConsole.addConsoleError("Couldn't load: ../../Lomus/Shader/shaders/default.frag\n");
         textEditor.SetText("Couldnt load shader file :/\n");
     }
 
@@ -191,8 +191,11 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
     oldWindowHeight = windowHeight[0];
     oldWindowWidth = windowWidth[0];
 
-        ImGui::SetNextWindowPos(ImVec2(0,0));
-        ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f,oldWindowHeight * 0.65f));
+
+    renderTitlebar(camera, sceneManager, lightManager);
+
+        ImGui::SetNextWindowPos(ImVec2(0,17.5));
+        ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f,oldWindowHeight * 0.634f));
         ImGui::Begin(ICON_FA_TABLE_CELLS_LARGE " Windows", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
         ImGui::BeginTabBar("Bigboi's");
 
@@ -304,6 +307,39 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
 
 }
 
+void Editor::renderTitlebar(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
+    if (ImGui::BeginMainMenuBar()) {
+
+        if (ImGui::BeginMenu("Project")) {
+            if (ImGui::MenuItem(ICON_FA_PLUS " New Project")) {
+
+            }
+
+            if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK" Save Project")) {
+
+            }
+            if (ImGui::MenuItem(ICON_FA_FOLDER " Open Project")) {
+
+            }
+
+
+
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Editor")) {
+
+            if (ImGui::MenuItem(ICON_FA_GEARS" Settings")) {
+
+            }
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+}
+
 
 void Editor::createNewGameObject(SceneManager &sceneManager) {
     mConsole.addConsoleLog("Creating a new Game Object");
@@ -316,8 +352,8 @@ void Editor::createNewGameObject(SceneManager &sceneManager) {
 
 void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
 
-    ImGui::SetNextWindowPos(ImVec2(oldWindowWidth * 0.75f, 0));
-    ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.25f, oldWindowHeight * 0.5f));
+    ImGui::SetNextWindowPos(ImVec2(oldWindowWidth * 0.75f, 17.5));
+    ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.25f, oldWindowHeight * 0.484f));
     ImGui::Begin(ICON_FA_ARROW_POINTER " Selection Panel", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
 
     ImGui::BeginTabBar("Selection");
@@ -1330,7 +1366,7 @@ void Editor::createFBO(int width, int height) {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
+        spdlog::error("ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);

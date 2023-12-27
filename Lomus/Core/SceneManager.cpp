@@ -113,7 +113,6 @@ void SceneManager::Delete()
             }
 
             common.destroyPhysicsWorld(it->second->world);
-            std::cout << "here here\n";
             //delete it->second;
             it++;
         }
@@ -255,11 +254,11 @@ void SceneManager::initHDRmap(const char *path) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         stbi_image_free(data);
-        std::cout << "Lads we did it, we loaded an Hdr image \n";
+        spdlog::info("Lads we did it, we loaded an Hdr image \n");
     }
     else
     {
-        std::cout << "Failed to load HDR image." << std::endl;
+        spdlog::error("Failed to load HDR image.\n");
     }
 
 
