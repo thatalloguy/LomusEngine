@@ -8,6 +8,7 @@ void Lomus::Editor::initStlyle(EditorStyle editorStyle) {
     auto& imGuiIO{ ImGui::GetIO() };
     imGuiIO.IniFilename = NULL;
     imGuiIO.LogFilename = NULL;
+    imGuiIO.FontGlobalScale = 0.3f;
     style.Alpha = 1.0f;
     style.DisabledAlpha = 0.6000000238418579f;
     style.WindowPadding = ImVec2(8.0f, 8.0f);
@@ -96,6 +97,7 @@ void Lomus::Editor::initStlyle(EditorStyle editorStyle) {
 }
 
 Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& sceneManager) : projectManager(mConsole) {
+
     mConsole.init();
     initStlyle(style);
     Editor::rawWindow = window;
@@ -145,16 +147,20 @@ Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& scene
 }
 
 void Lomus::Editor::Render(SceneManager& sceneManager, LightManager& lightManager, Camera& camera, EditorMode mode) {
+    handleWindowResize();
     switch (mode) {
         case EditorMode::debug:
             //renderDebugModeData(sceneManager, lightManager, shader, outlineShader, window, camera, windowWidth, windowHeight);
-            std::cerr << "Debug mode is deprecated\n";
+            spdlog::error("Debug mode is deprecated!");
         case EditorMode::editor:
             renderTheFullEditor(camera, sceneManager, lightManager);
             break;
         case EditorMode::shader:
-
             shaderEditor.Render();
+            break;
+        case EditorMode::launcher:
+            currentSceneState = launcher;
+            mLauncher.render(windowWidth[0], windowHeight[0]);
             break;
     }
 }
@@ -172,27 +178,9 @@ void Editor::setShader(int name, Shader &shader) {
 }
 
 void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, LightManager& lightManager) {
-    oldWindowHeight = windowHeight[0];
-    oldWindowWidth = windowWidth[0];
-    hasWindowResized = false;
 
 
-    glfwGetWindowSize(Editor::rawWindow, Editor::windowWidth, Editor::windowHeight);
 
-    if (oldWindowWidth != windowWidth[0] || oldWindowHeight != windowHeight[0]) {
-
-        if (isWindowMinized()) {
-            windowWidth[0] = 1;
-            windowHeight[0] = 1;
-        }
-
-        resizeFrameBuffer(Editor::windowWidth[0], Editor::windowHeight[0]);
-    }
-    oldWindowHeight = windowHeight[0];
-    oldWindowWidth = windowWidth[0];
-
-
-    renderTitlebar(camera, sceneManager, lightManager);
 
         ImGui::SetNextWindowPos(ImVec2(0,17.5));
         ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f,oldWindowHeight * 0.634f));
@@ -305,14 +293,17 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
         handleInputs(camera);
 
 
+    renderTitlebar(camera, sceneManager, lightManager);
 }
 
 void Editor::renderTitlebar(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
     if (ImGui::BeginMainMenuBar()) {
+        // fix this later 🤌
 
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem(ICON_FA_PLUS " New Project")) {
-
+                isCreatingNewProject = true;
+                mConsole.addConsoleLog("Creating a new Project!");
             }
 
             if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK" Save Project")) {
@@ -338,6 +329,42 @@ void Editor::renderTitlebar(Camera &camera, SceneManager &sceneManager, LightMan
 
         ImGui::EndMainMenuBar();
     }
+    if (isCreatingNewProject) {
+        renderProjectCreationMenu();
+    }
+}
+
+
+void Editor::renderProjectCreationMenu() {
+
+    ImGui::SetNextWindowPos(ImVec2(windowWidth[0] / 2, windowHeight[0] / 2));
+    ImGui::SetNextWindowSize(ImVec2(windowWidth[0] * 0.33, windowHeight[0] * 0.33));
+    ImGui::SetNextWindowFocus();
+    ImGui::Begin("Create a new Project: ");
+
+        spdlog::info("bob");
+
+        ImGui::Text("New project data go here");
+
+
+        if (ImGui::Button("Cancel")) {
+            isCreatingNewProject = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine(); ImGui::Text("        "); ImGui::SameLine();
+
+        if (ImGui::Button("Done")) {
+            isCreatingNewProject = false;
+            currentSceneState = editing;
+        }
+
+
+
+
+        ImGui::End();
+
+
 }
 
 
@@ -368,12 +395,10 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
         ImGui::PopID();
 
         ImGui::SameLine();
-        ImGui::SetWindowFontScale(1.25f);
         if (ImGui::Button(ICON_FA_PLUS)) {
             createNewGameObject(sceneManager);
         }
 
-        ImGui::SetWindowFontScale(1.0f);
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Create a new Game Object");
         }
@@ -437,11 +462,9 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
         ImGui::PopID();
 
         ImGui::SameLine();
-        ImGui::SetWindowFontScale(1.25f);
         if (ImGui::Button(ICON_FA_PLUS)) {
             createNewLight(sceneManager, lightManager);
         }
-        ImGui::SetWindowFontScale(1.0f);
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Create a new light Source");
         }
@@ -1445,7 +1468,7 @@ bool Editor::allowCameraInput() {
     float sceneViewWidth = windowWidth[0] * 0.75f;
     float sceneViewHeight = windowHeight[0] * 0.65f;
 
-    return (windowWidth[0] > 0 && windowHeight[0] > 0 && mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
+    return (windowWidth[0] > 0 && windowHeight[0] > 0 && mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right) && !isCreatingNewProject && currentSceneState != launcher); // Checks if mouse is inside the scene preview frame
 }
 
 bool Editor::isWindowMinized() {
@@ -1525,4 +1548,25 @@ void Editor::renderDebugLightObjects(Camera &camera, Shader& billboardShader) {
         pair.second->Render(camera, billboardShader);
     }
     cameraBillboard.Render(camera, billboardShader);
+}
+
+void Editor::handleWindowResize() {
+    oldWindowHeight = windowHeight[0];
+    oldWindowWidth = windowWidth[0];
+    hasWindowResized = false;
+
+
+    glfwGetWindowSize(Editor::rawWindow, Editor::windowWidth, Editor::windowHeight);
+
+    if (oldWindowWidth != windowWidth[0] || oldWindowHeight != windowHeight[0]) {
+
+        if (isWindowMinized()) {
+            windowWidth[0] = 1;
+            windowHeight[0] = 1;
+        }
+
+        resizeFrameBuffer(Editor::windowWidth[0], Editor::windowHeight[0]);
+    }
+    oldWindowHeight = windowHeight[0];
+    oldWindowWidth = windowWidth[0];
 }

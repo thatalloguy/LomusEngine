@@ -7,15 +7,17 @@
 #include "../../Thirdparty/ImGuiColorTextEdit/TextEditor.h"
 
 #include "../Core/SceneManager.h"
-#include "../Lights/LightManager.h"
-#include "../Core/Console.h"
 #include "../Core/ProjectManager.h"
-#include "../Shader/ShaderClass.h"
+#include "../Core/Console.h"
 #include "../Core/GameObject.h"
-#include "../Utils/ToolBox.h"
-#include "../Input/Keyboard.h"
+#include "Launcher.h"
 
+#include "../Lights/LightManager.h"
 #include "ShaderEditor.h"
+#include "../Shader/ShaderClass.h"
+
+#include "../Input/Keyboard.h"
+#include "../Utils/ToolBox.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtx/matrix_decompose.hpp>
@@ -24,7 +26,7 @@
 namespace Lomus {
 
 
-    enum EditorMode{debug,editor,shader};
+    enum EditorMode{debug,editor,shader,launcher};
 
     struct ToggleButton{
 
@@ -143,6 +145,9 @@ namespace Lomus {
 
         void renderBillboardModelComponent(std::shared_ptr<GameObject> currentGameObject);
 
+        void renderProjectCreationMenu();
+        Lomus::ProjectData newProjectData;
+        Lomus::Launcher mLauncher{projectManager};
 
         void createNewGameObject(SceneManager& sceneManager);
 
@@ -155,6 +160,7 @@ namespace Lomus {
 
         void createFBO(int width, int height);
 
+        void handleWindowResize();
         void resizeFrameBuffer(int newWidth, int newHeight);
         void manipulateObjectViaGizmo(movableObject& object, Camera& camera);
 
@@ -193,8 +199,8 @@ namespace Lomus {
         ImGuizmo::OPERATION currentGizmoState = ImGuizmo::OPERATION::TRANSLATE;
 
         enum EditorState{gameObject,Scene,Light,Script}; // What Type of object is the engine displaying / editing
-        enum EditState {editing, playing, texteditor};
-
+        enum EditState {editing, playing, texteditor, launcher};
+        bool isCreatingNewProject = false;
 
         std::shared_ptr<Lomus::Light> currentSelectedLight = nullptr;
 
@@ -223,7 +229,6 @@ namespace Lomus {
         void rollBackGameObject(std::shared_ptr<GameObject> gameObject, backUpObject rollBackData);
 
         std::unordered_map<std::shared_ptr<Lomus::Light>, LomusModelTypes::Billboard*> lightBillboards;
-
 
     protected:
         bool hasWindowResized = false;
