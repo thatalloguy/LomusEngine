@@ -1,4 +1,5 @@
-# LomusEngine
+
+# LomusEngine ( ${\color{yellow} PAUSED}$ )
 
 LomusEngine is a game engine written in C++ with Opengl 4.1 core
 
@@ -57,8 +58,5 @@ LomusEngine is a game engine written in C++ with Opengl 4.1 core
 
 https://github.com/thatalloguy/LomusEngine/assets/51132972/669adbbc-2f4d-49ff-a99d-387ca05e7d45
 
-
-# How development is going:
-Engine made by 1 person. This is a passion project <3
 
 
