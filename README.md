@@ -1,5 +1,5 @@
 
-# LomusEngine ( ${\color{yellow} PAUSED}$ )
+# LomusEngine
 
 LomusEngine is a game engine written in C++ with Opengl 4.1 core
 
