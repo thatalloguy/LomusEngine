@@ -29,6 +29,12 @@ Lomus has lots of system that are a mess and outdated.
 
 ## This sounds alot like skore lite!
   
+## TODO
+
+- [ ] Clean up main.cpp
+- [ ] Clean up Lomus source
+- [ ] Start ECS
+
 ![image](https://github.com/thatalloguy/LomusEngine/assets/51132972/9598c336-d1cd-4798-819b-51d1ac6c0dcc)
 
 No it does not.
