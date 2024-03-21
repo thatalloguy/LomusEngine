@@ -27,13 +27,15 @@ Lomus has lots of system that are a mess and outdated.
   #### The current lomus uses plain raw opengl which i dont like, instead i want a layer inbetween so that later on i have the ability to add support for other graphics api's
 
 
-## This sounds alot like skore lite!
-  
 ## TODO
 
 - [ ] Clean up main.cpp
 - [ ] Clean up Lomus source
 - [ ] Start ECS
+
+
+## This sounds alot like skore lite!
+
 
 ![image](https://github.com/thatalloguy/LomusEngine/assets/51132972/9598c336-d1cd-4798-819b-51d1ac6c0dcc)
 
