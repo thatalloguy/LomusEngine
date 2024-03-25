@@ -65,6 +65,7 @@ public:
 	void createModel(std::string const& path, std::map<std::string, std::string>& textures);
 
 	void Draw(Shader& defaultShader, Lomus::Camera& camera);
+    //void save(YAML::Emitter& out);
 
 	void Delete();
 	void DeletePhysicsData(PhysicsCommon& common);

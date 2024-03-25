@@ -15,6 +15,7 @@ namespace Lomus {
         std::string name;
         std::unordered_map<int, std::shared_ptr<GameObject>> gameObjects;
         PhysicsWorld* world;
+        //void save(YAML::Emitter& out) {};
     };
 
 }
@@ -33,6 +34,8 @@ public:
     std::shared_ptr<GameObject> getGameobject(int id);
     void removeGameObject(std::shared_ptr<GameObject> gameObject);
 
+
+    void save();
 
 	void renderCurrentScene(Shader& shader, Lomus::Camera& camera);
     void renderShadowMapScene(Shader& shader, Lomus::Camera& camera);

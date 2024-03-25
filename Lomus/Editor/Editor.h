@@ -1,3 +1,4 @@
+#pragma  once
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "../../Thirdparty/imgui/imgui.h"
 #include "../../Thirdparty/imgui/ImGuizmo.h"
@@ -7,23 +8,29 @@
 #include "../../Thirdparty/ImGuiColorTextEdit/TextEditor.h"
 
 #include "../Core/SceneManager.h"
-#include "../Lights/LightManager.h"
+#include "../Core/ProjectManager.h"
 #include "../Core/Console.h"
-#include "../Shader/ShaderClass.h"
 #include "../Core/GameObject.h"
-#include "../Utils/ToolBox.h"
-#include "../Input/Keyboard.h"
+#include "Launcher.h"
 
-#include "ShaderEditor.h"
+#include "../Lights/LightManager.h"
+#include "CodeEditor.h"
+#include "../Shader/ShaderClass.h"
+
+#include "../Input/Keyboard.h"
+#include "../Utils/ToolBox.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <spdlog/spdlog.h>
 
+
+
+
 namespace Lomus {
 
 
-    enum EditorMode{debug,editor,shader};
+    enum EditorMode{debug,editor,shader,launcher};
 
     struct ToggleButton{
 
@@ -99,6 +106,7 @@ namespace Lomus {
         bool isGameRunning();
 
         Console mConsole;
+        ProjectManager projectManager;
         int windowWidth[1] ={1280};
         int windowHeight[1] = {720};
         int visible = 1;
@@ -110,7 +118,16 @@ namespace Lomus {
 
         LomusModelTypes::Billboard cameraBillboard;
 
+        EditorMode getDesiredMode();
+
+
     private:
+
+        struct EditorMouse {
+            bool isDraggingTile = false;
+            AssetData* selectedTile= nullptr;
+        };
+        EditorMouse editorMouse;
 
         struct movableObject {
             glm::vec3& position;
@@ -118,11 +135,15 @@ namespace Lomus {
             glm::vec3& scale;
         };
 
+        bool isFirstFrame = true;
+
         std::string lightImagePath = "../../Lomus/Resources/lightbulb.png";
         std::string cameraImagePath = "../../Lomus/Resources/camera.png";
 
         void renderDebugModeData(SceneManager& sceneManager,LightManager& lightManager,Shader& shader, Shader& outlineShader,  GLFWwindow* window,  Camera& camera, int windowWidth, int windowHeight);
         void renderTheFullEditor(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
+        void renderTitlebar(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
+
 
         void renderSelectionPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
         void renderOtherPanel(Camera& camera, SceneManager& sceneManager, LightManager& lightManager);
@@ -139,18 +160,31 @@ namespace Lomus {
 
         void renderBillboardModelComponent(std::shared_ptr<GameObject> currentGameObject);
 
+        void renderProjectCreationMenu();
+        Lomus::ProjectData newProjectData;
+        Lomus::Launcher mLauncher{projectManager};
 
         void createNewGameObject(SceneManager& sceneManager);
 
         void prepareGameRuntime(SceneManager& sceneManager);
         void reloadEditScene(SceneManager& sceneManager);
 
+        static void dropCallback(GLFWwindow* window, int count, const char** paths);
+
+
+        void renderAssetsTab();
+        void refreshAssetsFolder();
+        void renderAssetTile(AssetData& assetData);
+        std::string currentViewDir = "/Assets/";
+
+        std::vector<AssetData> fileAssets;
 
         void renderLightProperties(SceneManager& sm, LightManager& lm);
         void createNewLight(SceneManager& sm, LightManager& lm);
 
         void createFBO(int width, int height);
 
+        void handleWindowResize();
         void resizeFrameBuffer(int newWidth, int newHeight);
         void manipulateObjectViaGizmo(movableObject& object, Camera& camera);
 
@@ -189,8 +223,8 @@ namespace Lomus {
         ImGuizmo::OPERATION currentGizmoState = ImGuizmo::OPERATION::TRANSLATE;
 
         enum EditorState{gameObject,Scene,Light,Script}; // What Type of object is the engine displaying / editing
-        enum EditState {editing, playing, texteditor};
-
+        enum EditState {editing, playing, texteditor, launcher};
+        bool isCreatingNewProject = false;
 
         std::shared_ptr<Lomus::Light> currentSelectedLight = nullptr;
 
@@ -200,7 +234,7 @@ namespace Lomus {
 
         void initStlyle(EditorStyle style);
 
-        ShaderEditor shaderEditor{};
+        //CodeEditor shaderEditor{};
         TextEditor textEditor;
         TextEditor::ErrorMarkers errorMarkers;
         imgui_addons::ImGuiFileBrowser file_dialog;
@@ -219,7 +253,6 @@ namespace Lomus {
         void rollBackGameObject(std::shared_ptr<GameObject> gameObject, backUpObject rollBackData);
 
         std::unordered_map<std::shared_ptr<Lomus::Light>, LomusModelTypes::Billboard*> lightBillboards;
-
 
     protected:
         bool hasWindowResized = false;

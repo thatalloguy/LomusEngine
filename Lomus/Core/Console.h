@@ -41,6 +41,9 @@ namespace Lomus {
 
     private:
 
+        static int previewCommands(ImGuiInputTextCallbackData* data);
+        bool isTyping = false;
+
         std::string commandBuffer;
         std::string prevCommand;
 

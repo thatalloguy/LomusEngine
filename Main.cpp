@@ -1,4 +1,3 @@
-#define IMGUI_DEFINE_MATH_OPERATORS
 #include <iostream>
 
 #include <glad/glad.h>
@@ -13,6 +12,8 @@
 #include <reactphysics3d/reactphysics3d.h>
 #include "Libs/Include/stb/std_image.h"
 #include <glm/gtc/random.hpp>
+#include "../../Thirdparty/imgui/imnodes.h"
+
 
 //Engine
 #include "Lomus/Renderer/Texture.h"
@@ -67,7 +68,6 @@ void mySillyFunction(std::vector<std::string> args, Camera& camera, SceneManager
 }
 
 int main() {
-    //EDITOR VERSION
 
 
     //Window init
@@ -78,7 +78,7 @@ int main() {
 
     glfwWindowHint(GLFW_SAMPLES, 4);
     //const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
+    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
     int window_width = 1280;// mode->width;
     int window_height = 720;// mode->height;
 
@@ -110,14 +110,14 @@ int main() {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImNodes::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.Fonts->AddFontDefault();
-
+    io.Fonts->AddFontFromFileTTF("../../Lomus/Resources/Font/Roboto-Regular.ttf", 50);
     ImFontConfig config;
     config.MergeMode = true;
-    config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+    config.GlyphMinAdvanceX = 13.0f;
     static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-    io.Fonts->AddFontFromFileTTF("../../Lomus/Resources/Font/forkawesome-webfont.ttf", 13.0f, &config, icon_ranges);
+    io.Fonts->AddFontFromFileTTF("../../Lomus/Resources/Font/forkawesome-webfont.ttf", 50.0f, &config, icon_ranges);
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
@@ -156,7 +156,6 @@ int main() {
     sceneManager.addGameObject(ground);
 
 
-
     Light sun = Light{
             0, 10, 0,
             1,1, 1, 1,
@@ -181,16 +180,6 @@ int main() {
     LightManager lightManager;
     lightManager.InitScene(sceneManager.getCurrentScene());
     lightManager.createNewLight(sceneManager.getCurrentScene(), sun);
-    //lightManager.createNewLight(sceneManager.getCurrentScene(), testLight); // use later
-    float gamma = 1.5f;
-
-
-
-
-
-    //Skybox skybox;
-    //skybox.Init();
-
 
     //Shadow
 
@@ -297,10 +286,12 @@ int main() {
 
     Shader mShadowShader("../../Lomus/Shader/shaders/shadowMap.vert", "../../Lomus/Shader/shaders/shadowMap.frag");
 
-    ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_DockingEnable;
 
+
+    YAML::Node root = YAML::LoadFile("../../Lomus/Resources/Data/config.yml");
+    double lasttime = glfwGetTime();
+    float TARGET_FPS = root["fpsCap"].as<float>();;
     while (!glfwWindowShouldClose(window)) {
-
         // Error checking
         GLenum err;
         if ((err = glGetError()) != GL_NO_ERROR && showErrors)
@@ -323,6 +314,10 @@ int main() {
 
 
         }
+        while (glfwGetTime() < lasttime + 1.0/TARGET_FPS) {
+            // CAPPING FPS
+        }
+        lasttime += 1.0/TARGET_FPS;
 
         // First update shadow projection
         shadowMap.area       = editor.shadowArea[0];
@@ -330,7 +325,7 @@ int main() {
         shadowMap.far_plane  = editor.shadowFarPlane[0];
 
         lightProjection = glm::ortho(-area, area, -area, area, near_plane, far_plane);
-        lightView = glm::lookAt(camera.Position, glm::vec3(0,0,0), glm::vec3(0, 1, 0));
+        lightView = glm::lookAt(glm::vec3(10, 10, 10), glm::vec3(0,0,0), glm::vec3(0, 1, 0));
 
         lightMatrix = lightProjection * lightView;
 
@@ -393,7 +388,7 @@ int main() {
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
-        editor.Render(sceneManager, lightManager, camera, EditorMode::editor);
+        editor.Render(sceneManager, lightManager, camera, editor.getDesiredMode());
 
 
 
@@ -402,16 +397,14 @@ int main() {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         //swap :)
-        glfwSwapBuffers(window);
+        glFlush(); // use this so that we can cap fps
         glfwPollEvents();
 
     }
 
     // Clean Up Phase
+    sceneManager.Delete();
 
-    //modelTest.cleanUp();
-
-    //skybox.Delete();
     editor.Delete();
     lightManager.Delete();
 
@@ -421,9 +414,10 @@ int main() {
 
     lDebugRenderer.Delete();
 
+    ImNodes::DestroyContext();
+    ImGui::DestroyContext();
     glfwDestroyWindow(window);
     glfwTerminate();
 
-    sceneManager.Delete();
     return 0;
 }

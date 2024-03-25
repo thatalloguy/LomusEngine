@@ -32,6 +32,11 @@ void SceneManager::addGameObject(GameObject& gameObject)
 void SceneManager::removeGameObject(std::shared_ptr<GameObject> gameObject) {
     spdlog::info("Removing gameObject " + gameObject->name + " | ID: " + std::to_string(gameObject->id).c_str());
     auto poorGameObject = currentScene->gameObjects.at(gameObject->id);
+
+    // also delete the collider data from the physics world
+    currentScene->world->destroyRigidBody(poorGameObject->mRigidBody);
+
+    // finally delete it from the list
     currentScene->gameObjects.erase(poorGameObject->id);
 }
 
@@ -113,7 +118,6 @@ void SceneManager::Delete()
             }
 
             common.destroyPhysicsWorld(it->second->world);
-            std::cout << "here here\n";
             //delete it->second;
             it++;
         }
@@ -199,9 +203,9 @@ void SceneManager::UpdatePhysicsWorld(float timeStamp) {
 
             tempQuat.inverse();
 
-            gameObject.second->rotation.x = tempQuat.x;
-            gameObject.second->rotation.y = tempQuat.y;
-            gameObject.second->rotation.z = tempQuat.z;
+            gameObject.second->rotation.x = -tempQuat.x;
+            gameObject.second->rotation.y = -tempQuat.y;
+            gameObject.second->rotation.z = -tempQuat.z;
             gameObject.second->rotation.w = tempQuat.w;
 
         }
@@ -218,7 +222,6 @@ void SceneManager::refreshRigdBodiesTransforms() {
             gameObject.second->Pquat.z =  gameObject.second->rotation.z;
             gameObject.second->Pquat.w =  gameObject.second->rotation.w;
 
-            gameObject.second->Pquat.inverse();
             gameObject.second->transform.setOrientation(gameObject.second->Pquat);
             gameObject.second->mRigidBody->setTransform(gameObject.second->transform);
         }
@@ -255,11 +258,11 @@ void SceneManager::initHDRmap(const char *path) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         stbi_image_free(data);
-        std::cout << "Lads we did it, we loaded an Hdr image \n";
+        spdlog::info("Lads we did it, we loaded an Hdr image \n");
     }
     else
     {
-        std::cout << "Failed to load HDR image." << std::endl;
+        spdlog::error("Failed to load HDR image.\n");
     }
 
 

@@ -128,6 +128,15 @@ void Console::addConsoleError(const char *data) {
 }
 
 
+int Console::previewCommands(ImGuiInputTextCallbackData *data) {
+
+
+    return 0;
+}
+
+
+
+
 void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& camera, SceneManager& sceneManager, ConsoleMode _mode)
 {
     if (_mode == ConsoleMode::intergrated) {
@@ -158,7 +167,9 @@ void Console::renderConsole(GLFWwindow* window, int width, int height, Camera& c
 
         ImGui::SetCursorPosY(height - 25);
         ImGui::SetNextItemWidth(width * 0.9);
-        ImGui::InputText(d, &commandBuffer);
+
+        ImGui::InputText(d, &commandBuffer,  ImGuiInputTextFlags_CallbackEdit, previewCommands);
+
         ImGui::PopID();
         ImGui::SameLine();
         if (ImGui::Button("Done") || glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {

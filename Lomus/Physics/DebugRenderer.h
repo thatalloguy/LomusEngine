@@ -20,6 +20,11 @@ namespace Lomus {
 		float z;
 	};
 
+    struct debugShape{
+        std::vector<debugVertex> vertices;
+        std::vector<int> indices;
+    };
+
 	class DRay {
 
 	public:
@@ -71,7 +76,7 @@ namespace Lomus {
 
 			debugShader.setIntUniform("useGlobalVertexColor", 0);
 
-			GLuint vertexPositionLoc = glGetUniformLocation(debugShader.ID, "aPos");//debugShader.getUniformLocation("aPos");
+			GLuint vertexPositionLoc = glGetUniformLocation(debugShader.ID, "aPos");
 			GLuint vertexColorLoc = glGetUniformLocation(debugShader.ID, "camMatrix");
 
 			if (debugRenderer.getNbTriangles() > 0) {
@@ -117,7 +122,14 @@ namespace Lomus {
 			debugShader.Delete();
 		};
 
+        void addCustomDebugShape(debugShape& shape) {
+
+        }
+
+
 	private:
+
+
 
 		void updateBuffers(PhysicsWorld* world) {
 
@@ -133,10 +145,8 @@ namespace Lomus {
                 rp3d::Array<rp3d::DebugRenderer::DebugTriangle> rawTriangles = debugRenderer.getTriangles();
 
 
-
                 newVertices.clear();
 				for (int i = 0; i < nbTriangles; i++) {
-
 					newVertices.push_back(Lomus::debugVertex{ -rawTriangles[i].point1.x, rawTriangles[i].point1.y, -rawTriangles[i].point1.z });
 					newVertices.push_back(Lomus::debugVertex{ -rawTriangles[i].point2.x, rawTriangles[i].point2.y, -rawTriangles[i].point2.z });
 					newVertices.push_back(Lomus::debugVertex{ -rawTriangles[i].point3.x, rawTriangles[i].point3.y, -rawTriangles[i].point3.z });

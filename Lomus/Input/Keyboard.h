@@ -55,6 +55,7 @@ namespace Lomus {
 
             SPACE = GLFW_KEY_SPACE,
             ESCAPE = GLFW_KEY_ESCAPE,
+            DELETE = GLFW_KEY_DELETE,
 
             ONE = GLFW_KEY_1,
             TWO = GLFW_KEY_2,

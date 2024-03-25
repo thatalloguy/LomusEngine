@@ -1,5 +1,7 @@
 #include "Editor.h"
-
+#include "../../Thirdparty/imgui/imgui_internal.h"
+string lastDroppedFile = "EMPTYY";
+bool hasDroppedFileThisFrame = false;
 
 void Lomus::Editor::initStlyle(EditorStyle editorStyle) {
 // Visual Studio style by MomoDeve from ImThemes
@@ -8,6 +10,7 @@ void Lomus::Editor::initStlyle(EditorStyle editorStyle) {
     auto& imGuiIO{ ImGui::GetIO() };
     imGuiIO.IniFilename = NULL;
     imGuiIO.LogFilename = NULL;
+    imGuiIO.FontGlobalScale = 0.3f;
     style.Alpha = 1.0f;
     style.DisabledAlpha = 0.6000000238418579f;
     style.WindowPadding = ImVec2(8.0f, 8.0f);
@@ -18,7 +21,7 @@ void Lomus::Editor::initStlyle(EditorStyle editorStyle) {
     style.WindowMenuButtonPosition = ImGuiDir_Left;
     style.ChildRounding = 0.0f;
     style.ChildBorderSize = 1.0f;
-    style.PopupRounding = 0.0f;
+    style.PopupRounding = 5.0f;
     style.PopupBorderSize = 1.0f;
     style.FramePadding = ImVec2(4.0f, 3.0f);
     style.FrameRounding = 7.5f;
@@ -95,13 +98,35 @@ void Lomus::Editor::initStlyle(EditorStyle editorStyle) {
 
 }
 
-Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& sceneManager) {
+bool is_directory(const std::string& path) {
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0) {
+        return false;  // Error accessing the file or directory
+    }
+    return (info.st_mode & S_IFDIR) != 0;
+}
+
+void Lomus::Editor::dropCallback(GLFWwindow* window, int count, const char** paths) {
+    if (is_directory(std::string(paths[0]))) {
+        hasDroppedFileThisFrame = true;
+        lastDroppedFile = paths[0];
+    } else {
+        spdlog::error("Can only drop a folder, no files >:( ");
+    }
+
+}
+
+Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& sceneManager) : projectManager(mConsole) {
+    glfwSetDropCallback(window, dropCallback);
+    lastDroppedFile = "EMPTY";
+    hasDroppedFileThisFrame = false;
+
     mConsole.init();
     initStlyle(style);
     Editor::rawWindow = window;
 
     glfwGetWindowSize(window, Editor::windowWidth, Editor::windowHeight);
-    std::cout << "Creating editor at size:" << Editor::windowWidth[0] << "X" << Editor::windowHeight[0] << "\n";
+    mConsole.addConsoleLog(std::string("Creating editor at size:" + std::to_string(Editor::windowWidth[0]) + "X" + std::to_string(Editor::windowHeight[0]) + "\n").c_str());
 
     createFBO(512, 512);
 
@@ -126,7 +151,7 @@ Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& scene
         in.close();
         textEditor.SetText(contents);
     } else {
-        std::cout << "Couldn't load: ../../Lomus/Shader/shaders/default.frag\n";
+        mConsole.addConsoleError("Couldn't load: ../../Lomus/Shader/shaders/default.frag\n");
         textEditor.SetText("Couldnt load shader file :/\n");
     }
 
@@ -145,18 +170,24 @@ Lomus::Editor::Editor(GLFWwindow *window, EditorStyle style, SceneManager& scene
 }
 
 void Lomus::Editor::Render(SceneManager& sceneManager, LightManager& lightManager, Camera& camera, EditorMode mode) {
+    handleWindowResize();
     switch (mode) {
         case EditorMode::debug:
             //renderDebugModeData(sceneManager, lightManager, shader, outlineShader, window, camera, windowWidth, windowHeight);
-            std::cerr << "Debug mode is deprecated\n";
+            spdlog::error("Debug mode is deprecated!");
         case EditorMode::editor:
             renderTheFullEditor(camera, sceneManager, lightManager);
             break;
         case EditorMode::shader:
-
-            shaderEditor.Render();
+            ///shaderEditor.Render();
+            spdlog::error("Shader mode is unavailable! :(");
+            break;
+        case EditorMode::launcher:
+            currentSceneState = launcher;
+            mLauncher.render(windowWidth[0], windowHeight[0]);
             break;
     }
+
 }
 
 void Lomus::Editor::Delete(SceneManager &sceneManager) {
@@ -172,27 +203,23 @@ void Editor::setShader(int name, Shader &shader) {
 }
 
 void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, LightManager& lightManager) {
-    oldWindowHeight = windowHeight[0];
-    oldWindowWidth = windowWidth[0];
-    hasWindowResized = false;
-
-
-    glfwGetWindowSize(Editor::rawWindow, Editor::windowWidth, Editor::windowHeight);
-
-    if (oldWindowWidth != windowWidth[0] || oldWindowHeight != windowHeight[0]) {
-
-        if (isWindowMinized()) {
-            windowWidth[0] = 1;
-            windowHeight[0] = 1;
+        if (isFirstFrame && mLauncher.hasProjectOpen()) {
+            projectManager.loadAssets();
+            isFirstFrame = false;
         }
 
-        resizeFrameBuffer(Editor::windowWidth[0], Editor::windowHeight[0]);
+    // Check if mouse isnt draggning anymore
+    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        editorMouse.isDraggingTile = false;
+        editorMouse.selectedTile = nullptr;
     }
-    oldWindowHeight = windowHeight[0];
-    oldWindowWidth = windowWidth[0];
 
-        ImGui::SetNextWindowPos(ImVec2(0,0));
-        ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f,oldWindowHeight * 0.65f));
+        auto& imGuiIO{ ImGui::GetIO() };
+        imGuiIO.FontGlobalScale = 0.3f;
+
+
+        ImGui::SetNextWindowPos(ImVec2(0,17.5));
+        ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.75f,oldWindowHeight * 0.634f));
         ImGui::Begin(ICON_FA_TABLE_CELLS_LARGE " Windows", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
         ImGui::BeginTabBar("Bigboi's");
 
@@ -230,6 +257,12 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
             ImGui::EndTabItem();
         }
 
+        if (ImGui::BeginTabItem(ICON_FA_GRADUATION_CAP " Wiki")) {
+            ImGui::NewLine();
+            ImGui::NewLine();
+            ImGui::Text("Documentation here");
+            ImGui::EndTabItem();
+        }
 
 
         ImGui::EndTabBar();
@@ -302,6 +335,78 @@ void Editor::renderTheFullEditor(Camera& camera, SceneManager& sceneManager, Lig
         handleInputs(camera);
 
 
+    renderTitlebar(camera, sceneManager, lightManager);
+}
+
+void Editor::renderTitlebar(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
+    if (ImGui::BeginMainMenuBar()) {
+        // fix this later 🤌
+
+        if (ImGui::BeginMenu("Project")) {
+            if (ImGui::MenuItem(ICON_FA_PLUS " New Project")) {
+                isCreatingNewProject = true;
+                mConsole.addConsoleLog("Creating a new Project!");
+            }
+
+            if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK" Save Project")) {
+
+            }
+            if (ImGui::MenuItem(ICON_FA_FOLDER " Open Project")) {
+
+            }
+
+
+
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Editor")) {
+
+            if (ImGui::MenuItem(ICON_FA_GEARS" Settings")) {
+
+            }
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+    if (isCreatingNewProject) {
+        renderProjectCreationMenu();
+    }
+}
+
+
+void Editor::renderProjectCreationMenu() {
+
+    ImGui::SetNextWindowPos(ImVec2(windowWidth[0] / 2, windowHeight[0] / 2));
+    ImGui::SetNextWindowSize(ImVec2(windowWidth[0] * 0.33, windowHeight[0] * 0.33));
+    ImGui::SetNextWindowFocus();
+    ImGui::Begin("Create a new Project: ");
+
+        spdlog::info("bob");
+
+        ImGui::Text("New project data go here");
+
+
+        if (ImGui::Button("Cancel")) {
+            isCreatingNewProject = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine(); ImGui::Text("        "); ImGui::SameLine();
+
+        if (ImGui::Button("Done")) {
+            isCreatingNewProject = false;
+            currentSceneState = editing;
+        }
+
+
+
+
+        ImGui::End();
+
+
 }
 
 
@@ -316,8 +421,8 @@ void Editor::createNewGameObject(SceneManager &sceneManager) {
 
 void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
 
-    ImGui::SetNextWindowPos(ImVec2(oldWindowWidth * 0.75f, 0));
-    ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.25f, oldWindowHeight * 0.5f));
+    ImGui::SetNextWindowPos(ImVec2(oldWindowWidth * 0.75f, 17.5));
+    ImGui::SetNextWindowSize(ImVec2(oldWindowWidth * 0.25f, oldWindowHeight * 0.484f));
     ImGui::Begin(ICON_FA_ARROW_POINTER " Selection Panel", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
 
     ImGui::BeginTabBar("Selection");
@@ -332,12 +437,10 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
         ImGui::PopID();
 
         ImGui::SameLine();
-        ImGui::SetWindowFontScale(1.25f);
         if (ImGui::Button(ICON_FA_PLUS)) {
             createNewGameObject(sceneManager);
         }
 
-        ImGui::SetWindowFontScale(1.0f);
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Create a new Game Object");
         }
@@ -401,11 +504,9 @@ void Editor::renderSelectionPanel(Camera &camera, SceneManager &sceneManager, Li
         ImGui::PopID();
 
         ImGui::SameLine();
-        ImGui::SetWindowFontScale(1.25f);
         if (ImGui::Button(ICON_FA_PLUS)) {
             createNewLight(sceneManager, lightManager);
         }
-        ImGui::SetWindowFontScale(1.0f);
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Create a new light Source");
         }
@@ -468,7 +569,7 @@ void Editor::renderOtherPanel(Camera &camera, SceneManager &sceneManager, LightM
     }
 
     if (ImGui::BeginTabItem(ICON_FA_FOLDER " Files")) {
-        ImGui::Text("Files here");
+        renderAssetsTab();
         ImGui::EndTabItem();
     }
 
@@ -503,6 +604,117 @@ void Editor::renderOtherPanel(Camera &camera, SceneManager &sceneManager, LightM
 
     ImGui::End();
 }
+
+
+
+void Editor::renderAssetsTab() {
+
+
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1150980454683304f, 0.1150980454683304f, 0.1190196138620377f, 1.0f));
+    ImGui::BeginChild(1, ImVec2(ImGui::GetWindowSize().x * 0.15f, ImGui::GetWindowSize().y * 0.8f));
+
+    if (ImGui::Selectable(ICON_FA_FOLDER " Assets", (currentViewDir == "/Assets/"))) {
+        currentViewDir = "/Assets/";
+    }
+    if (ImGui::Selectable(ICON_FA_GEARS " Config", (currentViewDir == "config.yml"))) {
+        currentViewDir = "config.yml";
+    }
+    ImGui::EndChild();
+
+
+    ImGui::SameLine();
+
+    ImGui::BeginChild(2, ImVec2(ImGui::GetWindowSize().x * 0.85f, ImGui::GetWindowSize().y * 0.8f));
+
+    // Handle draggin and droppin files
+
+    if (hasDroppedFileThisFrame) {
+        projectManager.addNewAsset(lastDroppedFile);
+        hasDroppedFileThisFrame = false;
+        projectManager.saveAssets();
+    }
+
+
+    if (mLauncher.hasProjectOpen() && !projectManager.currentOpenProject->assets.empty() && currentViewDir == "/Assets/") {
+
+
+            ImGui::BeginTable("Asset view", 6);
+            for (auto asset : projectManager.currentOpenProject->assets) {
+                renderAssetTile(asset);
+            }
+            ImGui::EndTable();
+
+
+    }
+
+    if (mLauncher.hasProjectOpen() && (currentViewDir == "config.yml")) {
+        ImGui::Text("No Config data loaded"); // replace later on
+    }
+
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+
+   if (editorMouse.isDraggingTile && editorMouse.selectedTile != nullptr) {
+
+       ImGui::BeginTooltip();
+       ImGui::Text(ICON_FA_CUBE);
+       ImGui::EndTooltip();
+   }
+}
+
+
+void Editor::renderAssetTile(Lomus::AssetData &assetData) {
+    ImGui::TableNextColumn();
+    ImVec2 rectMin = ImGui::GetCursorScreenPos();
+
+    ImVec2 rectMax = ImVec2(rectMin.x + ImGui::GetColumnWidth(), rectMin.y + windowHeight[0] * 0.13f);
+
+    ImVec4 color = ImVec4(0.125980454683304f, 0.1250980454683304f, 0.1290196138620377f, 1.0f);
+    ImGui::GetWindowDrawList()->AddRectFilled(rectMin, rectMax, IM_COL32(color.x * 255, color.y * 255, color.z * 255, color.w * 255), 10.0f);
+
+
+    if ((ImGui::GetMousePos().x > rectMin.x && ImGui::GetMousePos().y > rectMin.y) && ImGui::GetMousePos().x < rectMax.x && ImGui::GetMousePos().y < rectMax.y && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        ImGui::OpenPopup(1);
+    }
+    if ((ImGui::GetMousePos().x > rectMin.x && ImGui::GetMousePos().y > rectMin.y) && ImGui::GetMousePos().x < rectMax.x && ImGui::GetMousePos().y < rectMax.y && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        editorMouse.isDraggingTile = true;
+        editorMouse.selectedTile = &assetData;
+    }
+
+    // Draw Icon
+
+    string icon = ICON_FA_GEARS;
+
+    if (assetData.type == AssetType::Texture) {
+        icon = ICON_FA_OBJECT_GROUP;
+    } else {
+        icon = ICON_FA_CUBES;
+    }
+
+    // Render Icon
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + rectMax.x / 15);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + rectMax.y / 60); // why 15 and 60? i have no idea, it just looks good :)
+    ImGui::SetWindowFontScale(2.0f * (windowWidth[0] * 0.001f));
+    ImGui::Text(icon.c_str());
+    ImGui::SetWindowFontScale(1.0f);
+
+    // Draw Seperator line
+    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(rectMin.x, rectMin.y + windowHeight[0] * 0.075f), ImVec2(rectMax.x, rectMin.y + windowHeight[0] * 0.075f), IM_COL32(0.4f * 255, 0.322f * 255, 0.89f * 255, 255), 10.0f);
+    ImGui::Text(" ");
+    ImGui::Text(assetData.name.c_str());
+
+
+    if (ImGui::BeginPopupEx(1, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar)) {
+        if (ImGui::Selectable("Delete Asset")) {
+            projectManager.deleteAsset(assetData.name);
+            projectManager.saveAssets();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+
+
 
 void Editor::renderPropertiesPanel(Camera &camera, SceneManager &sceneManager, LightManager &lightManager) {
     ImGui::SetNextWindowPos(ImVec2(oldWindowWidth * 0.75f, oldWindowHeight * 0.5f));
@@ -781,23 +993,15 @@ void Editor::renderModelComponent(Model& model) {
     if (model.rawPath != "EMPTY") {
 
         ImGui::Text("Name: "); ImGui::SameLine();
+
         ImGui::BeginDisabled();
 
-        vector<string> filename;
-        vector<string> fileextension;
-        Lomus::Toolbox::splitStringToComponents(model.rawPath, '/', filename);
-        Lomus::Toolbox::splitStringToComponents(filename.back(), '.', filename);
-        filename.pop_back();
-        Lomus::Toolbox::splitStringToComponents(model.rawPath, '.', fileextension);
-        ImGui::Button(filename.back().c_str());
-        ImGui::EndDisabled();
+        ImGui::Button(model.rawPath.c_str());
 
-        ImGui::Text("File extension: "); ImGui::SameLine();
-        ImGui::BeginDisabled();
-        string extension = "." + fileextension.back();
-        ImGui::Button(extension.c_str());
         ImGui::EndDisabled();
-
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && editorMouse.isDraggingTile && (ImGui::GetMousePos().x > ImGui::GetItemRectMin().x && ImGui::GetMousePos().y > ImGui::GetItemRectMin().y) && ImGui::GetMousePos().x < ImGui::GetItemRectMax().x && ImGui::GetMousePos().y < ImGui::GetItemRectMax().y) {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+        }
         ImGui::Text(" ");
         if (ImGui::Button("Change")) {
             ImGui::OpenPopup("Open File");
@@ -1148,7 +1352,7 @@ void Editor::manipulateObjectViaGizmo(movableObject& object, Camera& camera) {
     object.position.z = -newPos.z ;
 
     object.scale = newScale;
-    newRot.w = -newRot.w;
+    newRot.w = newRot.w;
     object.rotation = glm::conjugate(newRot);
 
 }
@@ -1330,7 +1534,7 @@ void Editor::createFBO(int width, int height) {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
+        spdlog::error("ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -1365,6 +1569,8 @@ void Editor::Delete() {
     for (auto pair : lightBillboards) {
         delete pair.second;
     }
+    //////shaderEditor
+    /// .CleanUp(); <- fuck this function it makes the exit code bad >:(
 
 }
 
@@ -1409,7 +1615,7 @@ bool Editor::allowCameraInput() {
     float sceneViewWidth = windowWidth[0] * 0.75f;
     float sceneViewHeight = windowHeight[0] * 0.65f;
 
-    return (windowWidth[0] > 0 && windowHeight[0] > 0 && mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right)); // Checks if mouse is inside the scene preview frame
+    return (windowWidth[0] > 0 && windowHeight[0] > 0 && mouseX >= 0 && mouseX <= sceneViewWidth && mouseY >= 0 && mouseY <= sceneViewHeight && ImGui::IsMouseDown(ImGuiMouseButton_Right) && !isCreatingNewProject && currentSceneState == EditState::editing); // Checks if mouse is inside the scene preview frame
 }
 
 bool Editor::isWindowMinized() {
@@ -1433,6 +1639,15 @@ void Editor::reloadEditScene(SceneManager& sceneManager) {
         rollBackGameObject(sceneManager.getGameobject(rollBackData.id), rollBackData);
     }
 }
+
+
+void Editor::refreshAssetsFolder() {
+    fileAssets.clear();
+    for (const auto& entry : filesystem::directory_iterator(projectManager.getProjectPath())) {
+        fileAssets.push_back(AssetData{entry.path().string()});
+    }
+}
+
 
 backUpObject Editor::createBackupOfGameObject(std::shared_ptr<GameObject> gameObject) {
     backUpObject newObject;
@@ -1486,7 +1701,39 @@ void Editor::createNewLight(SceneManager &sm, LightManager &lm) {
 
 void Editor::renderDebugLightObjects(Camera &camera, Shader& billboardShader) {
     for (auto pair : lightBillboards) {
-        pair.second->Render(camera, billboardShader);
+        if (pair.first->lightType == 2){
+            pair.second->Render(camera, billboardShader);
+        }
     }
     cameraBillboard.Render(camera, billboardShader);
 }
+
+void Editor::handleWindowResize() {
+    oldWindowHeight = windowHeight[0];
+    oldWindowWidth = windowWidth[0];
+    hasWindowResized = false;
+
+
+    glfwGetWindowSize(Editor::rawWindow, Editor::windowWidth, Editor::windowHeight);
+
+    if (oldWindowWidth != windowWidth[0] || oldWindowHeight != windowHeight[0]) {
+
+        if (isWindowMinized()) {
+            windowWidth[0] = 1;
+            windowHeight[0] = 1;
+        }
+
+        resizeFrameBuffer(Editor::windowWidth[0], Editor::windowHeight[0]);
+    }
+    oldWindowHeight = windowHeight[0];
+    oldWindowWidth = windowWidth[0];
+}
+
+EditorMode Editor::getDesiredMode() {
+    if (mLauncher.hasProjectOpen()) {
+        return EditorMode::editor;
+    } else {
+        return  EditorMode::launcher;
+    }
+}
+

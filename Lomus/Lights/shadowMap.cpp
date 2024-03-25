@@ -187,6 +187,8 @@ void ShadowMap::updateShader(Shader &shader, Light& light) {
     shader.setVec3Uniform("lightPos", light.lightPosition_x, light.lightPosition_y, light.lightPosition_z);
     shader.setMat4Uniform("lightProjection", lightSpaceMatrix);
 
+
+
     glActiveTexture(GL_TEXTURE10);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     shader.setIntUniform("shadowMap", 4);
